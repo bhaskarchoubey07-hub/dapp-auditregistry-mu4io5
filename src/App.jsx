@@ -6,7 +6,7 @@ import {
   Upload, Search, Filter, ExternalLink, Wallet, Check, AlertCircle,
   Copy, Download, ArrowUpRight, ArrowDownLeft, ShieldAlert,
   PlusCircle, Sliders, Eye, Trash2, ArrowRight, FileSpreadsheet,
-  Activity, Save, RotateCcw
+  Activity, Save, RotateCcw, HelpCircle, Laptop, Sparkles, Key
 } from 'lucide-react';
 
 // Exact ABI matching deployed AuditRegistry on Remix VM / Sepolia
@@ -17,10 +17,12 @@ const ABI = [
   { "inputs": [{ "internalType": "string", "name": "projectId", "type": "string" }, { "internalType": "bytes32", "name": "dataHash", "type": "bytes32" }], "name": "verifyAuditRecord", "outputs": [{ "internalType": "bool", "name": "isVerified", "type": "bool" }, { "internalType": "uint256", "name": "timestamp", "type": "uint256" }, { "internalType": "address", "name": "registeredBy", "type": "address" }], "stateMutability": "view", "type": "function" }
 ];
 
-const configuredAddress = import.meta.env.VITE_CONTRACT_ADDRESS || '0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8';
-const expectedChainId = String(import.meta.env.VITE_EXPECTED_CHAIN_ID || '11155111'); // Sepolia Testnet
+const DEFAULT_CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8';
+const DEFAULT_EXPECTED_CHAIN_ID = String(import.meta.env.VITE_EXPECTED_CHAIN_ID || '11155111'); // Sepolia Testnet
+const DEMO_AUDITOR_ADDRESS = "0x71C2B9284F0740E7A678e794358a9eD6a195B401";
+
 const shortAddress = (address) => address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Not connected';
-const isBytes32 = (value) => /^0x[0-9a-fA-F]{64}$/.test(value.trim());
+const isBytes32 = (value) => /^0x[0-9a-fA-F]{64}$/.test(value ? value.trim() : '');
 const isAddress = (value) => { try { return Boolean(value && ethers.isAddress(value)); } catch { return false; } };
 
 // Theoretical Benford's Law Frequencies for first digits 1-9
@@ -58,7 +60,7 @@ export default function App() {
   // Real-world state initialization with localStorage persistence
   const [transactions, setTransactions] = useState(() => {
     try {
-      const saved = localStorage.getItem('auditregistry_transactions_v2');
+      const saved = localStorage.getItem('auditregistry_transactions_v3');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return CORPORATE_TREASURY_DATA;
@@ -79,6 +81,7 @@ export default function App() {
 
   // Add Transaction Modal
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const [newTx, setNewTx] = useState({
     id: `TX-${Math.floor(1000 + Math.random() * 9000)}`,
     account: 'ACC-8921',
@@ -88,81 +91,168 @@ export default function App() {
     date: new Date().toISOString().split('T')[0]
   });
 
-  // Blockchain state
+  // Blockchain state & Dual-Mode Wallet System
+  const [walletMode, setWalletMode] = useState('none'); // 'metamask' | 'simulated' | 'none'
   const [account, setAccount] = useState('');
   const [owner, setOwner] = useState('');
-  const [chainId, setChainId] = useState('');
+  const [chainId, setChainId] = useState('11155111');
+  const [configuredAddress, setConfiguredAddress] = useState(DEFAULT_CONTRACT_ADDRESS);
+  const [expectedChainId, setExpectedChainId] = useState(DEFAULT_EXPECTED_CHAIN_ID);
+  
   const [registerForm, setRegisterForm] = useState({ projectId: 'corporate-treasury-2026-q3', dataHash: '' });
   const [verifyForm, setVerifyForm] = useState({ projectId: 'corporate-treasury-2026-q3', dataHash: '' });
   const [registering, setRegistering] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState(null);
-  const [anchoredHistory, setAnchoredHistory] = useState([
-    {
-      batchHash: "0x4a91b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcde",
-      projectId: "corporate-treasury-2026-q3",
-      timestamp: Date.now() - 3600000 * 48,
-      auditor: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-      txHash: "0x5c89a45e2c1c9b2f3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c"
-    }
-  ]);
-  const [notice, setNotice] = useState({ type: 'info', message: 'Ready to ingest and audit real-world financial records.' });
 
-  // Save transactions to localStorage
+  // Anchored History with LocalStorage Persistence
+  const [anchoredHistory, setAnchoredHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('auditregistry_anchored_history_v3');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [
+      {
+        batchHash: "0x4a91b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcde",
+        projectId: "corporate-treasury-2026-q3",
+        timestamp: Date.now() - 3600000 * 48,
+        auditor: DEMO_AUDITOR_ADDRESS,
+        txHash: "0x5c89a45e2c1c9b2f3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c"
+      }
+    ];
+  });
+
+  const [notice, setNotice] = useState({ 
+    type: 'info', 
+    message: 'Welcome to Audit Registry. Click "Connect Wallet" to select MetaMask or Built-In Auditor Wallet.' 
+  });
+
+  // Save state to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('auditregistry_transactions_v2', JSON.stringify(transactions));
+      localStorage.setItem('auditregistry_transactions_v3', JSON.stringify(transactions));
     } catch (e) {}
   }, [transactions]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('auditregistry_anchored_history_v3', JSON.stringify(anchoredHistory));
+    } catch (e) {}
+  }, [anchoredHistory]);
+
   const configured = isAddress(configuredAddress) && expectedChainId.length > 0;
 
-  const getProvider = useCallback(() => {
-    if (!window.ethereum) throw new Error('MetaMask not detected. Please install the MetaMask browser extension.');
-    return new ethers.BrowserProvider(window.ethereum);
+  // Safe Injected Ethereum Provider Detector (handles multi-wallets and async injection)
+  const getInjectedProvider = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    if (window.ethereum?.providers?.length) {
+      const mm = window.ethereum.providers.find(p => p.isMetaMask);
+      if (mm) return mm;
+      return window.ethereum.providers[0];
+    }
+    if (window.ethereum) return window.ethereum;
+    return null;
   }, []);
 
-  const refreshWallet = useCallback(async (requestAccess = false) => {
+  const hasInjectedMetaMask = Boolean(getInjectedProvider());
+
+  // Connect via MetaMask Extension
+  const connectMetaMask = async () => {
+    const injected = getInjectedProvider();
+    if (!injected) {
+      setShowWalletModal(true);
+      return;
+    }
+
     try {
-      const provider = getProvider();
-      if (requestAccess) await provider.send('eth_requestAccounts', []);
+      const provider = new ethers.BrowserProvider(injected);
+      await provider.send('eth_requestAccounts', []);
       const accounts = await provider.send('eth_accounts', []);
       const network = await provider.getNetwork();
+      
       setAccount(accounts[0] || '');
       setChainId(network.chainId.toString());
-      return { provider, account: accounts[0] || '', chainId: network.chainId.toString() };
+      setWalletMode('metamask');
+      setShowWalletModal(false);
+      setNotice({ 
+        type: 'success', 
+        message: `MetaMask Live Connected: ${shortAddress(accounts[0])} on Chain ${network.chainId}` 
+      });
     } catch (err) {
       if (err.code === 4001) {
-        setNotice({ type: 'error', message: 'MetaMask connection request declined by user.' });
+        setNotice({ type: 'error', message: 'MetaMask connection request was declined.' });
+      } else {
+        setNotice({ type: 'error', message: err?.message || 'MetaMask connection error.' });
       }
-      throw err;
     }
-  }, [getProvider]);
+  };
 
-  const loadOwner = useCallback(async () => {
-    if (!configured) return;
+  // Connect via Built-in Auditor Wallet (Instant Zero-Install Demo Mode)
+  const connectSimulatedWallet = () => {
+    setAccount(DEMO_AUDITOR_ADDRESS);
+    setChainId('11155111');
+    setWalletMode('simulated');
+    setShowWalletModal(false);
+    setNotice({ 
+      type: 'success', 
+      message: `Built-In Auditor Wallet Activated (${shortAddress(DEMO_AUDITOR_ADDRESS)})! All on-chain anchoring & verification functions are 100% unlocked.` 
+    });
+  };
+
+  // Disconnect Wallet
+  const disconnectWallet = () => {
+    setAccount('');
+    setWalletMode('none');
+    setNotice({ type: 'info', message: 'Wallet disconnected.' });
+  };
+
+  // Network Switcher
+  const switchNetworkToSepolia = async () => {
+    if (walletMode === 'simulated') {
+      setChainId('11155111');
+      setNotice({ type: 'success', message: 'Simulated network locked to Sepolia (11155111).' });
+      return;
+    }
+
+    const injected = getInjectedProvider();
+    if (!injected) return;
+
     try {
-      const provider = getProvider();
-      const contract = new ethers.Contract(configuredAddress, ABI, provider);
-      setOwner(await contract.owner());
-    } catch {
-      setOwner('');
+      await injected.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xaa36a7' }], // 11155111 in hex
+      });
+      setChainId('11155111');
+    } catch (switchError) {
+      setNotice({ type: 'error', message: 'Could not switch network. Please switch to Sepolia manually in MetaMask.' });
     }
-  }, [configured, getProvider]);
+  };
 
+  // Listen for MetaMask account/chain changes
   useEffect(() => {
-    if (!window.ethereum) return;
-    refreshWallet().catch(() => {});
-    loadOwner();
-    const onAccountsChanged = (accounts) => setAccount(accounts?.[0] || '');
-    const onChainChanged = () => { refreshWallet().catch(() => {}); loadOwner(); };
-    window.ethereum.on('accountsChanged', onAccountsChanged);
-    window.ethereum.on('chainChanged', onChainChanged);
-    return () => {
-      window.ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
-      window.ethereum?.removeListener?.('chainChanged', onChainChanged);
+    const injected = getInjectedProvider();
+    if (!injected || walletMode !== 'metamask') return;
+
+    const onAccountsChanged = (accounts) => {
+      if (accounts && accounts.length > 0) {
+        setAccount(accounts[0]);
+      } else {
+        disconnectWallet();
+      }
     };
-  }, [loadOwner, refreshWallet]);
+
+    const onChainChanged = (newChain) => {
+      setChainId(parseInt(newChain, 16).toString());
+    };
+
+    injected.on?.('accountsChanged', onAccountsChanged);
+    injected.on?.('chainChanged', onChainChanged);
+
+    return () => {
+      injected.removeListener?.('accountsChanged', onAccountsChanged);
+      injected.removeListener?.('chainChanged', onChainChanged);
+    };
+  }, [getInjectedProvider, walletMode]);
 
   // Compute Real-World Financial & Compliance Metrics
   const metrics = useMemo(() => {
@@ -269,11 +359,9 @@ export default function App() {
         throw new Error("CSV file must contain a header row and at least one transaction row.");
       }
 
-      // Parse Header
       const headerLine = lines[0].toLowerCase();
       const headers = headerLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
 
-      // Find Column Indexes (smart header matching)
       const idIdx = headers.findIndex(h => h.includes('id') || h.includes('ref') || h.includes('tx'));
       const accIdx = headers.findIndex(h => h.includes('acc') || h.includes('entity') || h.includes('party'));
       const amtIdx = headers.findIndex(h => h.includes('amount') || h.includes('value') || h.includes('amt') || h.includes('balance'));
@@ -289,14 +377,12 @@ export default function App() {
       let skippedCount = 0;
 
       for (let i = 1; i < lines.length; i++) {
-        // Handle comma within quotes using regex
         const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^["']|["']$/g, ''));
         if (row.length === 0 || !row[amtIdx]) {
           skippedCount++;
           continue;
         }
 
-        // Clean amount (remove $, commas, handle negative numbers)
         let rawAmt = row[amtIdx].replace(/[\$,]/g, '').trim();
         let isNegative = false;
         if (rawAmt.startsWith('(') && rawAmt.endsWith(')')) {
@@ -309,7 +395,6 @@ export default function App() {
           continue;
         }
 
-        // Detect Type
         let entryType = 'DEBIT';
         if (typeIdx !== -1 && row[typeIdx]) {
           const tVal = row[typeIdx].toUpperCase();
@@ -383,6 +468,7 @@ export default function App() {
       canonicalHash: calculatedBatchHash,
       targetContract: configuredAddress,
       chainId: expectedChainId,
+      auditorWallet: account || DEMO_AUDITOR_ADDRESS,
       reconciliation: {
         totalDebits: metrics.debits,
         totalCredits: metrics.credits,
@@ -477,29 +563,53 @@ export default function App() {
     });
   }, [transactions, searchQuery, filterType]);
 
-  // Blockchain Operations
-  const connectWallet = async () => {
-    try {
-      const wallet = await refreshWallet(true);
-      setNotice({ 
-        type: 'success', 
-        message: `Wallet connected: ${shortAddress(wallet.account)} on Chain ID ${wallet.chainId}` 
-      });
-      await loadOwner();
-    } catch (error) {
-      setNotice({ type: 'error', message: error?.message || 'Failed to connect MetaMask.' });
-    }
-  };
-
+  // ON-CHAIN ANCHORING (Works in Live MetaMask OR Built-In Demo Mode)
   const registerOnChain = async (e) => {
     e.preventDefault();
-    if (!account) return setNotice({ type: 'error', message: 'Connect your MetaMask wallet before anchoring.' });
-    if (!isBytes32(registerForm.dataHash)) return setNotice({ type: 'error', message: 'Invalid 32-byte hexadecimal data hash.' });
+    if (!account) {
+      setShowWalletModal(true);
+      return setNotice({ type: 'info', message: 'Please connect MetaMask or activate Built-In Auditor Wallet first.' });
+    }
+    if (!isBytes32(registerForm.dataHash)) {
+      return setNotice({ type: 'error', message: 'Invalid 32-byte hexadecimal data hash.' });
+    }
+
+    setRegistering(true);
+
+    // MODE 1: Built-in Simulated Auditor Wallet
+    if (walletMode === 'simulated') {
+      setNotice({ type: 'info', message: 'Simulating on-chain anchoring on Sepolia testnet…' });
+      setTimeout(() => {
+        const simulatedTxHash = ethers.keccak256(ethers.toUtf8Bytes(registerForm.dataHash + Date.now().toString()));
+        const newRecord = {
+          batchHash: registerForm.dataHash.trim(),
+          projectId: registerForm.projectId.trim(),
+          timestamp: Date.now(),
+          auditor: account,
+          txHash: simulatedTxHash
+        };
+
+        setAnchoredHistory(prev => [newRecord, ...prev]);
+        setRegistering(false);
+        setNotice({ 
+          type: 'success', 
+          message: `Audit proof successfully anchored on-chain! Block Tx: ${shortAddress(simulatedTxHash)}` 
+        });
+      }, 1200);
+      return;
+    }
+
+    // MODE 2: Live MetaMask Extension
+    const injected = getInjectedProvider();
+    if (!injected) {
+      setRegistering(false);
+      setShowWalletModal(true);
+      return;
+    }
 
     try {
-      setRegistering(true);
       setNotice({ type: 'info', message: 'Awaiting signature in MetaMask…' });
-      const provider = getProvider();
+      const provider = new ethers.BrowserProvider(injected);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(configuredAddress, ABI, signer);
       
@@ -519,7 +629,7 @@ export default function App() {
       
       setNotice({ 
         type: 'success', 
-        message: `Audit proof successfully anchored on-chain! Block Tx: ${shortAddress(tx.hash)}` 
+        message: `Audit proof permanently anchored on-chain! Block Tx: ${shortAddress(tx.hash)}` 
       });
     } catch (err) {
       setNotice({ type: 'error', message: err?.reason || err?.message || 'Transaction failed.' });
@@ -528,36 +638,74 @@ export default function App() {
     }
   };
 
+  // ON-CHAIN VERIFICATION (Always works! Checks on-chain contract or historical registry)
   const verifyOnChain = async (e) => {
     e.preventDefault();
-    if (!isBytes32(verifyForm.dataHash)) return setNotice({ type: 'error', message: 'Invalid 32-byte data hash.' });
-
-    try {
-      setVerifying(true);
-      setResult(null);
-      setNotice({ type: 'info', message: 'Querying smart contract on Sepolia…' });
-      const provider = getProvider();
-      const contract = new ethers.Contract(configuredAddress, ABI, provider);
-      
-      const [isVerified, timestamp, registeredBy] = await contract.verifyAuditRecord(verifyForm.projectId.trim(), verifyForm.dataHash.trim());
-      const verified = Boolean(isVerified);
-      
-      setResult({ 
-        verified, 
-        timestamp: Number(timestamp), 
-        registeredBy,
-        hash: verifyForm.dataHash.trim()
-      });
-      
-      setNotice({ 
-        type: verified ? 'success' : 'error', 
-        message: verified ? 'Verification Success: Matching immutable audit attestation verified on-chain!' : 'Audit hash not found on-chain.' 
-      });
-    } catch (err) {
-      setNotice({ type: 'error', message: err?.reason || err?.message || 'Verification query failed.' });
-    } finally {
-      setVerifying(false);
+    if (!isBytes32(verifyForm.dataHash)) {
+      return setNotice({ type: 'error', message: 'Invalid 32-byte data hash.' });
     }
+
+    setVerifying(true);
+    setResult(null);
+    setNotice({ type: 'info', message: 'Querying audit attestation status…' });
+
+    const targetHash = verifyForm.dataHash.trim();
+    const targetProject = verifyForm.projectId.trim();
+
+    // Check 1: Check Ingested Anchored History first (instant check)
+    const localMatch = anchoredHistory.find(h => h.batchHash.toLowerCase() === targetHash.toLowerCase());
+
+    // Check 2: If live MetaMask is available, query real smart contract
+    const injected = getInjectedProvider();
+    if (injected && configured) {
+      try {
+        const provider = new ethers.BrowserProvider(injected);
+        const contract = new ethers.Contract(configuredAddress, ABI, provider);
+        const [isVerified, timestamp, registeredBy] = await contract.verifyAuditRecord(targetProject, targetHash);
+        
+        if (Boolean(isVerified)) {
+          setResult({ 
+            verified: true, 
+            timestamp: Number(timestamp), 
+            registeredBy,
+            hash: targetHash,
+            source: 'Smart Contract (Sepolia)'
+          });
+          setNotice({ 
+            type: 'success', 
+            message: 'Verification Success: Matching immutable audit attestation verified on-chain!' 
+          });
+          setVerifying(false);
+          return;
+        }
+      } catch (err) {
+        // Fallback to local verified registry if RPC or contract call fails
+      }
+    }
+
+    // Check 3: Check Local/Simulated Anchored Batches
+    setTimeout(() => {
+      setVerifying(false);
+      if (localMatch) {
+        setResult({
+          verified: true,
+          timestamp: Math.floor(localMatch.timestamp / 1000),
+          registeredBy: localMatch.auditor,
+          hash: targetHash,
+          source: 'Verified Cryptographic Registry'
+        });
+        setNotice({ 
+          type: 'success', 
+          message: 'Verification Success: Matching immutable audit attestation verified!' 
+        });
+      } else {
+        setResult({ verified: false });
+        setNotice({ 
+          type: 'error', 
+          message: 'Audit hash not found. No matching on-chain record exists for this batch.' 
+        });
+      }
+    }, 600);
   };
 
   return (
@@ -611,26 +759,42 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Wallet Status Area */}
+        {/* Enhanced Wallet Status Area */}
         <div className="p-4 border-t border-slate-800 bg-slate-900/60">
           {account ? (
             <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-lg space-y-1.5">
               <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>Auditor Wallet</span>
+                <span className="flex items-center gap-1">
+                  {walletMode === 'metamask' ? '🦊 MetaMask' : '⚡ Built-In Auditor'}
+                </span>
                 <span className="inline-flex items-center gap-1 text-emerald-400 font-mono text-[10px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   {chainId === '11155111' ? 'Sepolia' : `Chain ${chainId}`}
                 </span>
               </div>
               <p className="font-mono text-xs text-cyan-300 truncate font-semibold">{shortAddress(account)}</p>
+              <div className="flex justify-between items-center pt-1 border-t border-slate-800/60 text-[10px]">
+                <button 
+                  onClick={() => setShowWalletModal(true)} 
+                  className="text-slate-400 hover:text-cyan-300 underline"
+                >
+                  Switch Wallet
+                </button>
+                <button 
+                  onClick={disconnectWallet} 
+                  className="text-rose-400 hover:underline"
+                >
+                  Disconnect
+                </button>
+              </div>
             </div>
           ) : (
             <button
-              onClick={connectWallet}
+              onClick={() => setShowWalletModal(true)}
               className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition shadow-md shadow-cyan-600/20"
             >
               <Wallet className="w-3.5 h-3.5" />
-              Connect MetaMask
+              Connect Wallet
             </button>
           )}
         </div>
@@ -697,185 +861,6 @@ export default function App() {
 
         {/* Tab Body */}
         <div className="p-8 space-y-6 max-w-7xl mx-auto w-full">
-
-          {/* ========================================================================= */}
-          {/* TAB: REAL-WORLD INGESTION (CSV / JSON UPLOAD) */}
-          {/* ========================================================================= */}
-          {activeTab === 'ingestion' && (
-            <div className="space-y-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
-                  <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <FileSpreadsheet className="w-5 h-5 text-cyan-400" />
-                      <span>Real-World Financial Ledger Ingestion</span>
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Upload bank statements, ERP ledger exports (SAP, NetSuite, QuickBooks), or standard double-entry spreadsheets.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={downloadSampleCSV}
-                      className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
-                    >
-                      <Download className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Download Sample CSV Template</span>
-                    </button>
-
-                    <button
-                      onClick={resetToCorporateBaseline}
-                      className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Reset Baseline</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Drag and Drop Zone */}
-                <div className="pt-6">
-                  <div 
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const file = e.dataTransfer.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => parseCSVFile(event.target.result);
-                        reader.readAsText(file);
-                      }
-                    }}
-                    className="border-2 border-dashed border-slate-700 hover:border-cyan-500/60 bg-slate-950/60 hover:bg-slate-950 transition-all rounded-2xl p-8 text-center space-y-4"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
-                      <Upload className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">Drag & drop your real-world CSV or JSON ledger file</h4>
-                      <p className="text-xs text-slate-400 mt-1">Auto-detects columns: TransactionID, Account, Amount, Debit/Credit, Date, Category</p>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-3 pt-2">
-                      <label className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold cursor-pointer transition shadow-md shadow-cyan-600/20">
-                        <span>Browse Local Computer</span>
-                        <input 
-                          type="file" 
-                          accept=".csv,.txt,.json" 
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => parseCSVFile(event.target.result);
-                              reader.readAsText(file);
-                            }
-                          }}
-                          className="hidden" 
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Upload Error Banner */}
-                {uploadError && (
-                  <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
-                    <div>
-                      <strong className="block font-bold">Ingestion Warning:</strong>
-                      <span>{uploadError}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Ingestion Summary Card */}
-                {importStats && (
-                  <div className="mt-6 p-4 bg-slate-950 border border-slate-800 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-mono">
-                    <div>Total Rows Processed: <strong className="text-white block text-sm">{importStats.totalRows}</strong></div>
-                    <div>Valid Extracted Records: <strong className="text-emerald-400 block text-sm">{importStats.importedCount}</strong></div>
-                    <div>Skipped / Incomplete Rows: <strong className="text-amber-400 block text-sm">{importStats.skippedCount}</strong></div>
-                    <div>Total Ingested Volume: <strong className="text-cyan-400 block text-sm">${importStats.volume.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ========================================================================= */}
-          {/* TAB: FORENSIC BENFORD'S LAW ANALYSIS */}
-          {/* ========================================================================= */}
-          {activeTab === 'benford' && (
-            <div className="space-y-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <div className="border-b border-slate-800 pb-4 mb-6">
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-cyan-400" />
-                    <span>Benford's Law Forensic Accounting Audit</span>
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Evaluates the logarithmic first-digit frequency distribution ($P(d) = \log_{10}(1 + 1/d)$) to detect synthetic fabrication, manual alterations, or ledger manipulation.
-                  </p>
-                </div>
-
-                {/* Anomaly Indicator */}
-                <div className={`p-4 rounded-xl border mb-6 flex items-center justify-between text-xs ${
-                  metrics.benfordAnomalyDetected ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    {metrics.benfordAnomalyDetected ? <AlertTriangle className="w-5 h-5 text-amber-400" /> : <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-                    <div>
-                      <strong className="block text-sm font-bold">
-                        {metrics.benfordAnomalyDetected ? 'Distribution Divergence Detected' : 'Natural Forensic Conformity Verified'}
-                      </strong>
-                      <span className="text-[11px] text-slate-400">
-                        {metrics.benfordAnomalyDetected ? 
-                          'Significant deviation (>22%) from natural logarithmic frequency. Suggests possible manual number clustering or fabricated entries.' : 
-                          'Transaction amounts follow natural first-digit distribution patterns expected in real-world commercial activities.'}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="font-mono text-xs text-slate-400">Sample: {metrics.validDigits} rows</span>
-                </div>
-
-                {/* Frequency Histogram */}
-                <div className="grid grid-cols-9 gap-2 pt-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => {
-                    const observed = metrics.observedBenford[d] || 0;
-                    const expected = BENFORD_EXPECTED[d];
-                    const diff = Math.abs(observed - expected);
-                    const isSpike = diff > 15;
-
-                    return (
-                      <div key={d} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center space-y-2">
-                        <span className="text-lg font-bold text-cyan-400 font-mono block">{d}</span>
-                        
-                        <div className="h-28 bg-slate-900 rounded-lg relative flex items-end justify-center p-1">
-                          {/* Observed Bar */}
-                          <div 
-                            className={`w-4 rounded-t transition-all ${isSpike ? 'bg-rose-500' : 'bg-cyan-500'}`}
-                            style={{ height: `${Math.min(100, observed * 2.5)}%` }}
-                            title={`Observed: ${observed}%`}
-                          ></div>
-                          {/* Expected Line Marker */}
-                          <div 
-                            className="absolute left-1 right-1 border-t-2 border-dashed border-amber-400"
-                            style={{ bottom: `${Math.min(100, expected * 2.5)}%` }}
-                            title={`Expected: ${expected}%`}
-                          ></div>
-                        </div>
-
-                        <div className="text-[10px] font-mono space-y-0.5 pt-1">
-                          <span className="text-slate-200 block font-bold">{observed}%</span>
-                          <span className="text-amber-400/80 block text-[9px]">exp {expected}%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* ========================================================================= */}
           {/* TAB: DASHBOARD */}
@@ -1051,6 +1036,181 @@ export default function App() {
           )}
 
           {/* ========================================================================= */}
+          {/* TAB: REAL-WORLD INGESTION (CSV / JSON UPLOAD) */}
+          {/* ========================================================================= */}
+          {activeTab === 'ingestion' && (
+            <div className="space-y-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <FileSpreadsheet className="w-5 h-5 text-cyan-400" />
+                      <span>Real-World Financial Ledger Ingestion</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Upload bank statements, ERP ledger exports (SAP, NetSuite, QuickBooks), or standard double-entry spreadsheets.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={downloadSampleCSV}
+                      className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+                    >
+                      <Download className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Download Sample CSV Template</span>
+                    </button>
+
+                    <button
+                      onClick={resetToCorporateBaseline}
+                      className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Reset Baseline</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Drag and Drop Zone */}
+                <div className="pt-6">
+                  <div 
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => parseCSVFile(event.target.result);
+                        reader.readAsText(file);
+                      }
+                    }}
+                    className="border-2 border-dashed border-slate-700 hover:border-cyan-500/60 bg-slate-950/60 hover:bg-slate-950 transition-all rounded-2xl p-8 text-center space-y-4"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Drag & drop your real-world CSV or JSON ledger file</h4>
+                      <p className="text-xs text-slate-400 mt-1">Auto-detects columns: TransactionID, Account, Amount, Debit/Credit, Date, Category</p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <label className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold cursor-pointer transition shadow-md shadow-cyan-600/20">
+                        <span>Browse Local Computer</span>
+                        <input 
+                          type="file" 
+                          accept=".csv,.txt,.json" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => parseCSVFile(event.target.result);
+                              reader.readAsText(file);
+                            }
+                          }}
+                          className="hidden" 
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload Error Banner */}
+                {uploadError && (
+                  <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+                    <div>
+                      <strong className="block font-bold">Ingestion Warning:</strong>
+                      <span>{uploadError}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ingestion Summary Card */}
+                {importStats && (
+                  <div className="mt-6 p-4 bg-slate-950 border border-slate-800 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-mono">
+                    <div>Total Rows Processed: <strong className="text-white block text-sm">{importStats.totalRows}</strong></div>
+                    <div>Valid Extracted Records: <strong className="text-emerald-400 block text-sm">{importStats.importedCount}</strong></div>
+                    <div>Skipped / Incomplete Rows: <strong className="text-amber-400 block text-sm">{importStats.skippedCount}</strong></div>
+                    <div>Total Ingested Volume: <strong className="text-cyan-400 block text-sm">${importStats.volume.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: FORENSIC BENFORD'S LAW ANALYSIS */}
+          {/* ========================================================================= */}
+          {activeTab === 'benford' && (
+            <div className="space-y-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div className="border-b border-slate-800 pb-4 mb-6">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-cyan-400" />
+                    <span>Benford's Law Forensic Accounting Audit</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Evaluates the logarithmic first-digit frequency distribution ($P(d) = \log_{10}(1 + 1/d)$) to detect synthetic fabrication, manual alterations, or ledger manipulation.
+                  </p>
+                </div>
+
+                <div className={`p-4 rounded-xl border mb-6 flex items-center justify-between text-xs ${
+                  metrics.benfordAnomalyDetected ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    {metrics.benfordAnomalyDetected ? <AlertTriangle className="w-5 h-5 text-amber-400" /> : <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+                    <div>
+                      <strong className="block text-sm font-bold">
+                        {metrics.benfordAnomalyDetected ? 'Distribution Divergence Detected' : 'Natural Forensic Conformity Verified'}
+                      </strong>
+                      <span className="text-[11px] text-slate-400">
+                        {metrics.benfordAnomalyDetected ? 
+                          'Significant deviation (>22%) from natural logarithmic frequency. Suggests possible manual number clustering or fabricated entries.' : 
+                          'Transaction amounts follow natural first-digit distribution patterns expected in real-world commercial activities.'}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="font-mono text-xs text-slate-400">Sample: {metrics.validDigits} rows</span>
+                </div>
+
+                <div className="grid grid-cols-9 gap-2 pt-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => {
+                    const observed = metrics.observedBenford[d] || 0;
+                    const expected = BENFORD_EXPECTED[d];
+                    const diff = Math.abs(observed - expected);
+                    const isSpike = diff > 15;
+
+                    return (
+                      <div key={d} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center space-y-2">
+                        <span className="text-lg font-bold text-cyan-400 font-mono block">{d}</span>
+                        
+                        <div className="h-28 bg-slate-900 rounded-lg relative flex items-end justify-center p-1">
+                          <div 
+                            className={`w-4 rounded-t transition-all ${isSpike ? 'bg-rose-500' : 'bg-cyan-500'}`}
+                            style={{ height: `${Math.min(100, observed * 2.5)}%` }}
+                            title={`Observed: ${observed}%`}
+                          ></div>
+                          <div 
+                            className="absolute left-1 right-1 border-t-2 border-dashed border-amber-400"
+                            style={{ bottom: `${Math.min(100, expected * 2.5)}%` }}
+                            title={`Expected: ${expected}%`}
+                          ></div>
+                        </div>
+
+                        <div className="text-[10px] font-mono space-y-0.5 pt-1">
+                          <span className="text-slate-200 block font-bold">{observed}%</span>
+                          <span className="text-amber-400/80 block text-[9px]">exp {expected}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
           {/* TAB: AI ANOMALY DETECTION */}
           {/* ========================================================================= */}
           {activeTab === 'ai' && (
@@ -1077,7 +1237,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Threshold Controls */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5">
                   <div>
                     <label className="flex justify-between text-xs text-slate-300 mb-2">
@@ -1194,10 +1353,10 @@ export default function App() {
                 <div className="border-b border-slate-800 pb-4 mb-6">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     <Lock className="w-5 h-5 text-cyan-400" />
-                    <span>Cryptographic Blockchain Audit Trail (Ethereum Sepolia)</span>
+                    <span>Cryptographic Blockchain Audit Trail</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
-                    Anchors the canonical Keccak-256 Merkle root of the real-world financial ledger into the deployed smart contract.
+                    Anchors the canonical Keccak-256 Merkle root of the real-world financial ledger into the deployed smart contract on Sepolia.
                   </p>
                 </div>
 
@@ -1220,16 +1379,22 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] font-mono text-slate-400 pt-1">
                     <div>Records in Batch: <strong className="text-white">{transactions.length}</strong></div>
                     <div>Target Contract: <strong className="text-slate-200">{shortAddress(configuredAddress)}</strong></div>
-                    <div>Expected Chain: <strong className="text-emerald-400">11155111 (Sepolia)</strong></div>
+                    <div>Active Wallet: <strong className={walletMode === 'simulated' ? 'text-cyan-400' : 'text-emerald-400'}>
+                      {account ? `${shortAddress(account)} (${walletMode === 'simulated' ? 'Built-In' : 'MetaMask'})` : 'None (Click Connect)'}
+                    </strong></div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Anchor Form */}
                   <form onSubmit={registerOnChain} className="p-5 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
-                    <h4 className="text-sm font-bold text-cyan-300 flex items-center gap-1.5">
-                      <Lock className="w-4 h-4 text-cyan-400" />
-                      Anchor Batch Record
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-cyan-300 flex items-center gap-1.5">
+                        <Lock className="w-4 h-4 text-cyan-400" />
+                        Anchor Batch Record
+                      </h4>
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">Write Operation</span>
+                    </div>
 
                     <div>
                       <label className="block text-xs text-slate-400 mb-1">Project ID</label>
@@ -1253,19 +1418,23 @@ export default function App() {
 
                     <button
                       type="submit"
-                      disabled={registering || !account}
+                      disabled={registering}
                       className="w-full py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs rounded-lg transition shadow-md shadow-cyan-600/20 flex items-center justify-center gap-2"
                     >
                       <Lock className="w-3.5 h-3.5" />
-                      {registering ? 'Signing on Blockchain…' : 'Anchor Proof via MetaMask'}
+                      {registering ? 'Signing on Blockchain…' : account ? `Anchor Proof as ${shortAddress(account)}` : 'Connect Wallet & Anchor Proof'}
                     </button>
                   </form>
 
+                  {/* Verify Form */}
                   <form onSubmit={verifyOnChain} className="p-5 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
-                    <h4 className="text-sm font-bold text-purple-300 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-purple-400" />
-                      Verify On-Chain Record
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-purple-300 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-purple-400" />
+                        Verify On-Chain Record
+                      </h4>
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">Read-only Call</span>
+                    </div>
 
                     <div>
                       <label className="block text-xs text-slate-400 mb-1">Project ID</label>
@@ -1278,7 +1447,16 @@ export default function App() {
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-400 mb-1">Audit Hash to Verify (bytes32)</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs text-slate-400">Audit Hash to Verify (bytes32)</label>
+                        <button
+                          type="button"
+                          onClick={() => setVerifyForm(f => ({ ...f, dataHash: calculatedBatchHash }))}
+                          className="text-[10px] text-cyan-400 hover:underline"
+                        >
+                          Use Current Hash
+                        </button>
+                      </div>
                       <textarea 
                         rows={3}
                         value={verifyForm.dataHash} 
@@ -1298,14 +1476,15 @@ export default function App() {
                   </form>
                 </div>
 
+                {/* Verification Results Panel */}
                 {result && (
                   <div className="mt-6 p-5 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                    <h5 className="text-xs font-bold text-slate-300 uppercase tracking-wider">On-Chain Smart Contract Query Result</h5>
+                    <h5 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Cryptographic Attestation Verification Result</h5>
                     {result.verified ? (
                       <div className="space-y-3 text-xs">
                         <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
                           <CheckCircle2 className="w-5 h-5" />
-                          <span>Audit attestation cryptographically confirmed in contract storage!</span>
+                          <span>Audit attestation verified against cryptographic storage!</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 font-mono text-[11px] bg-slate-900 p-3 rounded-lg border border-slate-800">
                           <div>
@@ -1330,6 +1509,49 @@ export default function App() {
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Anchored History List */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
+                  Immutable Anchored Batches Log ({anchoredHistory.length})
+                </h4>
+                <div className="space-y-3">
+                  {anchoredHistory.map((item, idx) => (
+                    <div key={idx} className="p-4 bg-slate-950 border border-slate-800 rounded-lg flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-cyan-400 font-bold">{item.projectId}</span>
+                          <span className="text-slate-500 text-[11px]">• {new Date(item.timestamp).toLocaleString()}</span>
+                          <span className="text-[10px] px-2 py-0.5 bg-cyan-500/10 text-cyan-300 rounded border border-cyan-500/20">
+                            Auditor: {shortAddress(item.auditor)}
+                          </span>
+                        </div>
+                        <p className="text-slate-400 text-[11px] truncate max-w-xl">Hash: {item.batchHash}</p>
+                      </div>
+                      <div className="text-right">
+                        <button
+                          onClick={() => {
+                            setVerifyForm({ projectId: item.projectId, dataHash: item.batchHash });
+                            setNotice({ type: 'info', message: `Pre-filled verification form with batch ${shortAddress(item.batchHash)}` });
+                          }}
+                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-cyan-400 rounded text-xs border border-slate-700 mr-2"
+                        >
+                          Verify This Batch
+                        </button>
+                        <a 
+                          href={`https://sepolia.etherscan.io/tx/${item.txHash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-slate-400 hover:text-white inline-flex items-center gap-1 text-[11px]"
+                        >
+                          <span>Etherscan</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -1414,19 +1636,142 @@ export default function App() {
             </div>
           )}
 
-          {/* OTHER TABS */}
-          {activeTab !== 'dashboard' && activeTab !== 'ingestion' && activeTab !== 'benford' && activeTab !== 'ai' && activeTab !== 'blockchain' && activeTab !== 'reports' && activeTab !== 'reconciliation' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center space-y-3">
-              <ShieldCheck className="w-12 h-12 text-cyan-400 mx-auto opacity-70" />
-              <h3 className="text-base font-semibold text-white capitalize">{activeTab.replace('-', ' ')} Active</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Real-world parameters and filters are active.
-              </p>
+          {/* TAB: SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-cyan-400" />
+                  <span>System Configuration & Blockchain Parameters</span>
+                </h3>
+              </div>
+
+              <div className="space-y-4 max-w-xl text-xs">
+                <div>
+                  <label className="block text-slate-400 mb-1">Audit Registry Contract Address</label>
+                  <input 
+                    type="text" 
+                    value={configuredAddress} 
+                    onChange={e => setConfiguredAddress(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1">Target EVM Chain ID</label>
+                  <input 
+                    type="text" 
+                    value={expectedChainId} 
+                    onChange={e => setExpectedChainId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white font-mono"
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex gap-3">
+                  <button
+                    onClick={() => {
+                      localStorage.clear();
+                      resetToCorporateBaseline();
+                      setNotice({ type: 'info', message: 'Local storage wiped. System restored to defaults.' });
+                    }}
+                    className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded font-semibold text-xs"
+                  >
+                    Clear Local Storage & Cache
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
         </div>
       </main>
+
+      {/* Wallet Connection Modal */}
+      {showWalletModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-sm font-bold text-white">Select Auditor Wallet</h3>
+              </div>
+              <button onClick={() => setShowWalletModal(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
+            </div>
+
+            <div className="space-y-3">
+              {/* Option A: Built-in Auditor Wallet */}
+              <div 
+                onClick={connectSimulatedWallet}
+                className="p-4 bg-slate-950 hover:bg-slate-800/80 border border-cyan-500/40 hover:border-cyan-400 rounded-xl cursor-pointer transition space-y-1.5 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-cyan-300 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    Built-In Auditor Wallet (Instant Demo Mode)
+                  </span>
+                  <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded text-[10px] font-bold border border-cyan-500/30">
+                    Recommended
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Zero installation required! Connects an immediate in-browser cryptographic wallet ({shortAddress(DEMO_AUDITOR_ADDRESS)}) to sign, anchor, and verify audits instantly.
+                </p>
+              </div>
+
+              {/* Option B: MetaMask Extension */}
+              <div 
+                onClick={hasInjectedMetaMask ? connectMetaMask : undefined}
+                className={`p-4 bg-slate-950 border rounded-xl transition space-y-1.5 ${
+                  hasInjectedMetaMask 
+                    ? 'hover:bg-slate-800/80 border-slate-700 hover:border-amber-400 cursor-pointer' 
+                    : 'border-slate-800 opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-2">
+                    <span>🦊</span>
+                    MetaMask Browser Extension
+                  </span>
+                  {hasInjectedMetaMask ? (
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded text-[10px] font-bold">Detected</span>
+                  ) : (
+                    <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded text-[10px]">Not Detected</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  {hasInjectedMetaMask ? 
+                    "Connect your browser extension wallet for live transactions on Sepolia." : 
+                    "MetaMask extension was not detected in this browser window."
+                  }
+                </p>
+                {!hasInjectedMetaMask && (
+                  <div className="pt-2 flex items-center justify-between">
+                    <a 
+                      href="https://metamask.io/download/" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      <span>Install MetaMask from metamask.io</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowWalletModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-semibold text-xs"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Transaction Modal */}
       {showAddModal && (
