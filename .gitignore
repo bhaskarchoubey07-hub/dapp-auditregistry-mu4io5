@@ -31,6 +31,8 @@ venv/
 env/
 ENV/
 .pytest_cache/
+*.db
+*.sqlite*
 
 # OS & Editor
 .DS_Store
