@@ -12,10 +12,13 @@ export const supabase = env.hasSupabase
   ? createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
   : null;
 
-const API_BASE = env.API_URL || 'http://localhost:8000';
+const API_BASE = (env.API_URL !== undefined && env.API_URL !== null && env.API_URL !== '')
+  ? env.API_URL
+  : (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? '' : 'http://localhost:8000');
 
 async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  const base = API_BASE ? API_BASE.replace(/\/+$/, '') : '';
+  const url = `${base}${endpoint}`;
   try {
     const res = await fetch(url, {
       ...options,

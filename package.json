@@ -10,7 +10,8 @@
     "check": "vite build",
     "test:contracts": "hardhat --config hardhat.config.cjs test",
     "test:backend": "python -m pytest backend/tests",
-    "test": "npm run test:contracts && npm run test:backend"
+    "test:serverless": "node scripts/test_serverless_api.mjs",
+    "test": "npm run test:serverless && npm run test:contracts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

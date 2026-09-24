@@ -16,8 +16,8 @@ export const env = {
   SUPABASE_URL: getEnv('VITE_SUPABASE_URL', ''),
   SUPABASE_ANON_KEY: getEnv('VITE_SUPABASE_ANON_KEY', ''),
 
-  // Backend API URL
-  API_URL: getEnv('VITE_API_URL', 'http://localhost:8000'),
+  // Backend API URL: In production, default to relative '' (same origin /api) so Vercel Serverless handles it
+  API_URL: getEnv('VITE_API_URL', typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? '' : 'http://localhost:8000'),
 
   // Smart Contract & Network Configuration
   CONTRACT_ADDRESS: getEnv('VITE_CONTRACT_ADDRESS', '0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8'),
