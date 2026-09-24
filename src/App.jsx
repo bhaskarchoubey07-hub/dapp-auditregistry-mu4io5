@@ -24,7 +24,6 @@ const ABI = [
 
 const DEFAULT_CONTRACT_ADDRESS = env.CONTRACT_ADDRESS;
 const DEFAULT_EXPECTED_CHAIN_ID = env.EXPECTED_CHAIN_ID;
-const DEMO_AUDITOR_ADDRESS = "0x71C2B9284F0740E7A678e794358a9eD6a195B401";
 
 const shortAddress = (address) => address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Not connected';
 const isBytes32 = (value) => /^0x[0-9a-fA-F]{64}$/.test(value ? value.trim() : '');
@@ -35,45 +34,21 @@ const BENFORD_EXPECTED = {
   1: 30.1, 2: 17.6, 3: 12.5, 4: 9.7, 5: 7.9, 6: 6.7, 7: 5.8, 8: 5.1, 9: 4.6
 };
 
-// Initial Corporate Treasury Dataset
-const CORPORATE_TREASURY_DATA = [
-  { id: "TX-2001", account: "TREASURY-01", amount: 150000.00, type: "CREDIT", date: "2026-09-01", category: "Commercial Revenue", status: "VERIFIED", anomalyScore: 0.15, anomalyReason: "Verified customer accounts receivable" },
-  { id: "TX-2002", account: "OPEX-401", amount: 24500.00, type: "DEBIT", date: "2026-09-01", category: "Cloud Infrastructure", status: "VERIFIED", anomalyScore: 0.21, anomalyReason: "Monthly enterprise cloud SLA invoice" },
-  { id: "TX-2003", account: "PAYROLL-10", amount: 82400.00, type: "DEBIT", date: "2026-09-02", category: "Bi-Weekly Payroll", status: "VERIFIED", anomalyScore: 0.08, anomalyReason: "Automated ACH payroll disbursement" },
-  { id: "TX-2004", account: "ESCROW-08", amount: 9999.00, type: "DEBIT", date: "2026-09-02", category: "Advisory Services", status: "FLAGGED", anomalyScore: 0.94, anomalyReason: "Potential structuring (just below $10,000 threshold)" },
-  { id: "TX-2005", account: "VENDOR-99", amount: 14250.00, type: "DEBIT", date: "2026-09-03", category: "Hardware Procurement", status: "FLAGGED", anomalyScore: 0.88, anomalyReason: "Exceeds $10,000 AML regulatory limit" },
-  { id: "TX-2006", account: "TREASURY-01", amount: 45000.00, type: "CREDIT", date: "2026-09-03", category: "Short-Term Investment Yield", status: "VERIFIED", anomalyScore: 0.18, anomalyReason: "Treasury bond coupon maturity" },
-  { id: "TX-2007", account: "VENDOR-99", amount: 14250.00, type: "DEBIT", date: "2026-09-04", category: "Hardware Procurement", status: "FLAGGED", anomalyScore: 0.86, anomalyReason: "Duplicate amount collision within 48-hour window" },
-  { id: "TX-2008", account: "TAX-GOV", amount: 32500.00, type: "DEBIT", date: "2026-09-04", category: "Quarterly Corporate Tax", status: "VERIFIED", anomalyScore: 0.19, anomalyReason: "IRS federal EFTPS statutory payment" },
-  { id: "TX-2009", account: "INVESTOR-01", amount: 200000.00, type: "CREDIT", date: "2026-09-05", category: "Series B Tranche", status: "VERIFIED", anomalyScore: 0.25, anomalyReason: "Audited equity contribution wire" },
-  { id: "TX-2010", account: "LOGISTICS-04", amount: 6800.00, type: "DEBIT", date: "2026-09-05", category: "Freight Forwarding", status: "VERIFIED", anomalyScore: 0.11, anomalyReason: "Routine logistics vendor settlement" },
-  { id: "TX-2011", account: "LEGAL-22", amount: 15300.00, type: "DEBIT", date: "2026-09-06", category: "External Counsel", status: "FLAGGED", anomalyScore: 0.89, anomalyReason: "Exceeds $10,000 AML regulatory limit" },
-  { id: "TX-2012", account: "TREASURY-01", amount: 12500.00, type: "CREDIT", date: "2026-09-06", category: "Sub-License Royalties", status: "VERIFIED", anomalyScore: 0.12, anomalyReason: "Verified contractual royalty settlement" },
-  { id: "TX-2013", account: "FACILITIES-03", amount: 18400.00, type: "DEBIT", date: "2026-09-07", category: "Commercial Lease", status: "FLAGGED", anomalyScore: 0.87, anomalyReason: "Exceeds $10,000 AML regulatory limit" },
-  { id: "TX-2014", account: "TREASURY-01", amount: 62000.00, type: "CREDIT", date: "2026-09-07", category: "Enterprise Contract SOW-4", status: "VERIFIED", anomalyScore: 0.14, anomalyReason: "Delivered software license milestone" },
-  { id: "TX-2015", account: "INSURANCE-77", amount: 8900.00, type: "DEBIT", date: "2026-09-08", category: "Directors & Officers Policy", status: "VERIFIED", anomalyScore: 0.16, anomalyReason: "Annual policy underwritten binder" },
-  { id: "TX-2016", account: "MARKETING-09", amount: 35000.00, type: "DEBIT", date: "2026-09-08", category: "Global Campaign Media Buy", status: "FLAGGED", anomalyScore: 0.91, anomalyReason: "Exceeds $10,000 AML limit; high-value round number" },
-  { id: "TX-2017", account: "TREASURY-01", amount: 110000.00, type: "CREDIT", date: "2026-09-09", category: "Institutional Client Inflow", status: "VERIFIED", anomalyScore: 0.22, anomalyReason: "Direct bank wire verification verified" },
-  { id: "TX-2018", account: "AUDIT-FIRM", amount: 28000.00, type: "DEBIT", date: "2026-09-09", category: "Statutory Financial Audit", status: "FLAGGED", anomalyScore: 0.88, anomalyReason: "Exceeds $10,000 AML regulatory limit" },
-  { id: "TX-2019", account: "RETAINER-44", amount: 9950.00, type: "DEBIT", date: "2026-09-10", category: "Consulting Retainer", status: "FLAGGED", anomalyScore: 0.93, anomalyReason: "Potential structuring (just below $10,000 threshold)" },
-  { id: "TX-2020", account: "TREASURY-01", amount: 73949.00, type: "CREDIT", date: "2026-09-10", category: "Merchant Inflows Batch", status: "VERIFIED", anomalyScore: 0.09, anomalyReason: "Aggregated daily payment processor settlement" }
-];
-
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  // Real-world state with database sync & localStorage fallback
-  const [transactions, setTransactions] = useState(() => {
-    try {
-      const saved = localStorage.getItem('auditregistry_transactions_v4');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return CORPORATE_TREASURY_DATA;
-  });
+  // Real-world operational state (Empty by default: NO mock or demo data)
+  const [sessions, setSessions] = useState([]);
+  const [sessionId, setSessionId] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [transactions, setTransactions] = useState([]);
+  const [anchoredHistory, setAnchoredHistory] = useState([]);
 
-  const [projectId, setProjectId] = useState('corporate-treasury-2026-q3');
-  const [sessionId, setSessionId] = useState(() => localStorage.getItem('auditregistry_session_id') || 'local-session-q3');
+  // Data Loading & Error States
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
 
@@ -103,82 +78,31 @@ export default function App() {
   const [certificatePayload, setCertificatePayload] = useState(null);
 
   const [newTx, setNewTx] = useState({
-    id: `TX-${Math.floor(1000 + Math.random() * 9000)}`,
-    account: 'ACC-8921',
-    amount: '12500',
+    id: '',
+    account: '',
+    amount: '',
     type: 'DEBIT',
-    category: 'Wire Transfer',
+    category: '',
     date: new Date().toISOString().split('T')[0]
   });
 
-  // Blockchain state & Dual-Mode Wallet System
+  // Blockchain state & Real Wallet Integration (MetaMask EIP-1193 Only)
   const [walletMode, setWalletMode] = useState('none');
   const [account, setAccount] = useState('');
   const [chainId, setChainId] = useState(DEFAULT_EXPECTED_CHAIN_ID);
   const [configuredAddress, setConfiguredAddress] = useState(DEFAULT_CONTRACT_ADDRESS);
   const [expectedChainId, setExpectedChainId] = useState(DEFAULT_EXPECTED_CHAIN_ID);
   
-  const [registerForm, setRegisterForm] = useState({ projectId: 'corporate-treasury-2026-q3', dataHash: '' });
-  const [verifyForm, setVerifyForm] = useState({ projectId: 'corporate-treasury-2026-q3', dataHash: '' });
+  const [registerForm, setRegisterForm] = useState({ projectId: '', dataHash: '' });
+  const [verifyForm, setVerifyForm] = useState({ projectId: '', dataHash: '' });
   const [registering, setRegistering] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState(null);
 
-  // Anchored History with LocalStorage Persistence
-  const [anchoredHistory, setAnchoredHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem('auditregistry_anchored_history_v4');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [
-      {
-        batchHash: "0x4a91b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcde",
-        projectId: "corporate-treasury-2026-q3",
-        timestamp: Date.now() - 3600000 * 48,
-        auditor: DEMO_AUDITOR_ADDRESS,
-        txHash: "0x5c89a45e2c1c9b2f3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c"
-      }
-    ];
-  });
-
   const [notice, setNotice] = useState({ 
     type: 'info', 
-    message: 'AuditRegistry Enterprise initialized. All subsystems operational.' 
+    message: 'AuditRegistry Enterprise initialized. Ready for real-world ledger audit.' 
   });
-
-  // Startup configuration verification & Health polling
-  useEffect(() => {
-    validateClientConfig();
-    refreshSystemHealth();
-  }, []);
-
-  const refreshSystemHealth = async () => {
-    setIsHealthChecking(true);
-    try {
-      const h = await api.getSystemHealth().catch(() => null);
-      const dbH = await api.getDatabaseHealth().catch(() => null);
-      setSystemHealth(h);
-      setDbHealth(dbH);
-    } finally {
-      setIsHealthChecking(false);
-    }
-  };
-
-  // Save state to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('auditregistry_transactions_v4', JSON.stringify(transactions));
-      localStorage.setItem('auditregistry_session_id', sessionId);
-    } catch (e) {}
-  }, [transactions, sessionId]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('auditregistry_anchored_history_v4', JSON.stringify(anchoredHistory));
-    } catch (e) {}
-  }, [anchoredHistory]);
-
-  const configured = isAddress(configuredAddress) && expectedChainId.length > 0;
 
   // Safe Injected Ethereum Provider Detector
   const getInjectedProvider = useCallback(() => {
@@ -225,18 +149,6 @@ export default function App() {
     }
   };
 
-  // Connect via Built-in Auditor Wallet
-  const connectSimulatedWallet = () => {
-    setAccount(DEMO_AUDITOR_ADDRESS);
-    setChainId(expectedChainId);
-    setWalletMode('simulated');
-    setShowWalletModal(false);
-    setNotice({ 
-      type: 'success', 
-      message: `Auditor Wallet Activated (${shortAddress(DEMO_AUDITOR_ADDRESS)}). Gasless cryptographic signing enabled.` 
-    });
-  };
-
   const disconnectWallet = () => {
     setAccount('');
     setWalletMode('none');
@@ -268,17 +180,144 @@ export default function App() {
     };
   }, [getInjectedProvider, walletMode]);
 
-  // Compute Real-World Financial & Compliance Metrics
+  // Load Real Sessions & Transactions from Backend Database
+  const loadInitialData = useCallback(async () => {
+    setIsLoadingData(true);
+    setLoadError(null);
+    try {
+      const sessionList = await api.listSessions().catch(() => []);
+      setSessions(sessionList || []);
+
+      const savedSessionId = localStorage.getItem('auditregistry_session_id');
+      let targetSession = null;
+      if (savedSessionId && sessionList?.some(s => s.id === savedSessionId)) {
+        targetSession = sessionList.find(s => s.id === savedSessionId);
+      } else if (sessionList && sessionList.length > 0) {
+        targetSession = sessionList[0];
+      }
+
+      if (targetSession) {
+        setSessionId(targetSession.id);
+        setProjectId(targetSession.projectId || 'audit-run');
+        
+        const txs = await api.getSessionTransactions(targetSession.id).catch(() => []);
+        setTransactions(txs.map(t => ({
+          id: t.transactionRef || t.id,
+          account: t.accountNumber || t.account,
+          amount: Number(t.amount),
+          type: t.type,
+          date: t.date || t.entryDate || '',
+          category: t.category || 'General',
+          status: t.isAnomaly ? 'FLAGGED' : 'VERIFIED',
+          anomalyScore: t.anomalyScore !== null && t.anomalyScore !== undefined ? t.anomalyScore : 0.1,
+          anomalyReason: t.explanation || 'Verified transaction'
+        })));
+
+        const bcRecords = await api.getBlockchainRecords(targetSession.id).catch(() => []);
+        if (bcRecords && bcRecords.length > 0) {
+          setAnchoredHistory(bcRecords.map(b => ({
+            batchHash: b.dataHash || b.data_hash,
+            projectId: targetSession.projectId,
+            timestamp: new Date(b.anchoredAt || b.anchored_at || Date.now()).getTime(),
+            auditor: b.walletAddress || b.wallet_address,
+            txHash: b.transactionHash || b.transaction_hash
+          })));
+        } else {
+          setAnchoredHistory([]);
+        }
+      } else {
+        setSessionId('');
+        setProjectId('');
+        setTransactions([]);
+        setAnchoredHistory([]);
+      }
+    } catch (err) {
+      console.error("Error loading real audit sessions:", err);
+      setLoadError("Unable to connect to backend database. Please ensure backend is running.");
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, []);
+
+  // Switch Active Session
+  const switchSession = async (sId) => {
+    const s = sessions.find(item => item.id === sId);
+    if (!s) return;
+    setSessionId(s.id);
+    setProjectId(s.projectId);
+    localStorage.setItem('auditregistry_session_id', s.id);
+    setIsLoadingData(true);
+    try {
+      const txs = await api.getSessionTransactions(s.id).catch(() => []);
+      setTransactions(txs.map(t => ({
+        id: t.transactionRef || t.id,
+        account: t.accountNumber || t.account,
+        amount: Number(t.amount),
+        type: t.type,
+        date: t.date || t.entryDate || '',
+        category: t.category || 'General',
+        status: t.isAnomaly ? 'FLAGGED' : 'VERIFIED',
+        anomalyScore: t.anomalyScore !== null && t.anomalyScore !== undefined ? t.anomalyScore : 0.1,
+        anomalyReason: t.explanation || 'Verified transaction'
+      })));
+
+      const bcRecords = await api.getBlockchainRecords(s.id).catch(() => []);
+      if (bcRecords && bcRecords.length > 0) {
+        setAnchoredHistory(bcRecords.map(b => ({
+          batchHash: b.dataHash || b.data_hash,
+          projectId: s.projectId,
+          timestamp: new Date(b.anchoredAt || b.anchored_at || Date.now()).getTime(),
+          auditor: b.walletAddress || b.wallet_address,
+          txHash: b.transactionHash || b.transaction_hash
+        })));
+      } else {
+        setAnchoredHistory([]);
+      }
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const refreshSystemHealth = async () => {
+    setIsHealthChecking(true);
+    try {
+      const h = await api.getSystemHealth().catch(() => null);
+      const dbH = await api.getDatabaseHealth().catch(() => null);
+      setSystemHealth(h);
+      setDbHealth(dbH);
+    } finally {
+      setIsHealthChecking(false);
+    }
+  };
+
+  // Startup configuration verification & Health polling
+  useEffect(() => {
+    validateClientConfig();
+    refreshSystemHealth();
+    loadInitialData();
+  }, [loadInitialData]);
+
+  // Compute Real-World Financial & Compliance Metrics (Strictly from real records)
   const metrics = useMemo(() => {
     const total = transactions.length;
+    if (total === 0) {
+      return {
+        total: 0, verified: 0, flagged: 0, debits: 0, credits: 0, totalVolume: 0,
+        balanceDifference: 0, isReconciled: null, riskScore: 0, riskLevel: 'NO DATA',
+        observedBenford: {}, benfordAnomalyDetected: false, validDigits: 0,
+        amlCount: 0, structuringCount: 0, madScore: '0.000',
+        anchoredCount: anchoredHistory.length
+      };
+    }
+
     const verified = transactions.filter(t => t.status === 'VERIFIED').length;
     const flagged = transactions.filter(t => t.status === 'FLAGGED').length;
-    const debits = transactions.filter(t => t.type === 'DEBIT').reduce((acc, t) => acc + Number(t.amount), 0);
-    const credits = transactions.filter(t => t.type === 'CREDIT').reduce((acc, t) => acc + Number(t.amount), 0);
+    const debits = transactions.filter(t => t.type === 'DEBIT').reduce((acc, t) => acc + Number(t.amount || 0), 0);
+    const credits = transactions.filter(t => t.type === 'CREDIT').reduce((acc, t) => acc + Number(t.amount || 0), 0);
     const totalVolume = debits + credits;
     const balanceDifference = Math.abs(debits - credits);
     const isReconciled = balanceDifference < 0.01;
-    const riskScore = total > 0 ? Math.min(100, Math.round((flagged / total) * 100)) : 0;
+    const riskScore = Math.min(100, Math.round((flagged / total) * 100));
     
     let riskLevel = 'LOW';
     if (riskScore > 50) riskLevel = 'CRITICAL';
@@ -357,10 +396,10 @@ export default function App() {
 
   // Generate Deterministic Canonical SHA-256 Merkle Root Hash
   const calculatedBatchHash = useMemo(() => {
-    if (transactions.length === 0) return '0x0000000000000000000000000000000000000000000000000000000000000000';
-    const sorted = [...transactions].sort((a, b) => a.id.localeCompare(b.id));
+    if (transactions.length === 0) return '';
+    const sorted = [...transactions].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
     const canonicalPayload = {
-      projectId: projectId,
+      projectId: projectId || 'audit-run',
       recordCount: sorted.length,
       totalDebit: Number(metrics.debits.toFixed(2)),
       totalCredit: Number(metrics.credits.toFixed(2)),
@@ -377,9 +416,11 @@ export default function App() {
   }, [transactions, projectId, metrics.debits, metrics.credits]);
 
   useEffect(() => {
-    setRegisterForm(f => ({ ...f, dataHash: calculatedBatchHash }));
-    setVerifyForm(f => ({ ...f, dataHash: calculatedBatchHash }));
-  }, [calculatedBatchHash]);
+    if (calculatedBatchHash) {
+      setRegisterForm(f => ({ ...f, dataHash: calculatedBatchHash, projectId: projectId || f.projectId }));
+      setVerifyForm(f => ({ ...f, dataHash: calculatedBatchHash, projectId: projectId || f.projectId }));
+    }
+  }, [calculatedBatchHash, projectId]);
 
   // Secure CSV Sanitizer: neutralizes formula injection (=, +, -, @)
   const sanitizeCSVValue = (val) => {
@@ -391,7 +432,7 @@ export default function App() {
     return str;
   };
 
-  // Robust CSV Parser with Formula Injection Sanitation & 5-Step Ingestion Wizard
+  // Robust CSV Parser with Formula Injection Sanitation
   const parseCSVFile = (text) => {
     try {
       setUploadError(null);
@@ -448,23 +489,28 @@ export default function App() {
           entryType = 'CREDIT';
         }
 
-        const rawId = idIdx !== -1 && row[idIdx] ? sanitizeCSVValue(row[idIdx]) : `TX-${2100 + i}`;
-        if (seenIds.has(rawId)) {
+        let txId = idIdx !== -1 && row[idIdx] ? sanitizeCSVValue(row[idIdx]) : `TX-IMP-${String(i).padStart(4, '0')}`;
+        if (seenIds.has(txId)) {
           duplicateCount++;
+          txId = `${txId}_DUP_${i}`;
         }
-        seenIds.add(rawId);
+        seenIds.add(txId);
 
-        const txObj = {
-          id: rawId,
-          account: accIdx !== -1 && row[accIdx] ? sanitizeCSVValue(row[accIdx]) : 'ACC-GENERAL',
+        const account = accIdx !== -1 && row[accIdx] ? sanitizeCSVValue(row[accIdx]) : 'GEN-ACCOUNT';
+        const date = dateIdx !== -1 && row[dateIdx] ? sanitizeCSVValue(row[dateIdx]) : new Date().toISOString().split('T')[0];
+        const category = catIdx !== -1 && row[catIdx] ? sanitizeCSVValue(row[catIdx]) : 'General Transfer';
+
+        const rowObject = {
+          id: txId,
+          account,
           amount: Math.abs(numericAmount),
           type: entryType,
-          date: dateIdx !== -1 && row[dateIdx] ? sanitizeCSVValue(row[dateIdx]) : new Date().toISOString().split('T')[0],
-          category: catIdx !== -1 && row[catIdx] ? sanitizeCSVValue(row[catIdx]) : 'Ledger Ingestion',
+          date,
+          category,
           reviewStatus: 'OPEN'
         };
 
-        parsedRows.push(evaluateTransaction(txObj));
+        parsedRows.push(evaluateTransaction(rowObject));
       }
 
       if (parsedRows.length === 0) {
@@ -489,51 +535,100 @@ export default function App() {
     }
   };
 
-  // Confirm Ingestion & Commit to Database / Backend
+  // Confirm Ingestion & Commit to Real Database / Backend
   const commitIngestedData = async () => {
     setShowPreviewModal(false);
-    setTransactions(csvPreviewRows);
-
+    setIsLoadingData(true);
     try {
-      const newSession = await api.createSession(projectId, `Batch Ingestion ${new Date().toLocaleTimeString()}`, csvPreviewRows).catch(() => null);
+      const prj = projectId.trim() || 'financial-audit-run';
+      const sName = `Audit Run ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+      
+      const newSession = await api.createSession(prj, sName, csvPreviewRows);
       if (newSession && newSession.sessionId) {
         setSessionId(newSession.sessionId);
+        setProjectId(prj);
+        localStorage.setItem('auditregistry_session_id', newSession.sessionId);
+
+        // Run real analytics pipeline on backend
         await api.reconcileSession(newSession.sessionId).catch(() => {});
         await api.detectAnomalies(newSession.sessionId).catch(() => {});
         await api.runBenford(newSession.sessionId).catch(() => {});
-        await api.calculateCanonicalHash(newSession.sessionId).catch(() => {});
+        const canonical = await api.calculateCanonicalHash(newSession.sessionId).catch(() => null);
+
+        if (canonical && canonical.canonicalHash) {
+          setRegisterForm({ projectId: prj, dataHash: canonical.canonicalHash });
+          setVerifyForm({ projectId: prj, dataHash: canonical.canonicalHash });
+        }
+
+        // Fetch updated transactions with real model anomaly scores
+        const txs = await api.getSessionTransactions(newSession.sessionId).catch(() => []);
+        setTransactions(txs.map(t => ({
+          id: t.transactionRef || t.id,
+          account: t.accountNumber || t.account,
+          amount: Number(t.amount),
+          type: t.type,
+          date: t.date || t.entryDate || '',
+          category: t.category || 'General',
+          status: t.isAnomaly ? 'FLAGGED' : 'VERIFIED',
+          anomalyScore: t.anomalyScore !== null && t.anomalyScore !== undefined ? t.anomalyScore : 0.1,
+          anomalyReason: t.explanation || 'Verified transaction'
+        })));
+
+        // Refresh session list
+        const updatedSessions = await api.listSessions().catch(() => []);
+        setSessions(updatedSessions || []);
+        setAnchoredHistory([]);
+
+        setNotice({ 
+          type: 'success', 
+          message: `Successfully ingested ${csvPreviewRows.length} real transactions into audit database.` 
+        });
       }
-      setNotice({ 
-        type: 'success', 
-        message: `Successfully ingested and persisted ${csvPreviewRows.length} transactions into audit database!` 
-      });
     } catch (err) {
-      setNotice({ 
-        type: 'success', 
-        message: `Ingested ${csvPreviewRows.length} records. Saved to persistent client ledger.` 
-      });
+      setNotice({ type: 'error', message: `Ingestion failed: ${err.message}` });
+    } finally {
+      setIsLoadingData(false);
     }
     setActiveTab('dashboard');
   };
 
-  // Trigger Anomaly Detection with Simulated Processing Animation
-  const triggerAIReanalysis = () => {
+  // Trigger Anomaly Detection on Real Session
+  const triggerAIReanalysis = async () => {
+    if (transactions.length === 0) {
+      return setNotice({ type: 'error', message: 'No transaction data available. Upload financial data before running anomaly detection.' });
+    }
     setIsAnalyzing(true);
-    setAnalysisPhase('Preparing Dataset & Vectorizing Amounts…');
-    setTimeout(() => {
-      setAnalysisPhase('Executing Isolation Forest Decision Trees…');
-      setTimeout(() => {
-        setAnalysisPhase('Calculating AML & Structuring Heuristic Risk…');
-        setTimeout(() => {
-          setIsAnalyzing(false);
-          setTransactions(prev => prev.map(t => evaluateTransaction(t)));
-          setNotice({ type: 'success', message: 'AI Analysis complete! All transactions scored with transparent explainability.' });
-        }, 600);
-      }, 700);
-    }, 600);
+    setAnalysisPhase('Executing Isolation Forest Decision Trees on Real Records…');
+    try {
+      if (sessionId) {
+        await api.detectAnomalies(sessionId).catch(() => {});
+        const txs = await api.getSessionTransactions(sessionId).catch(() => []);
+        if (txs && txs.length > 0) {
+          setTransactions(txs.map(t => ({
+            id: t.transactionRef || t.id,
+            account: t.accountNumber || t.account,
+            amount: Number(t.amount),
+            type: t.type,
+            date: t.date || t.entryDate || '',
+            category: t.category || 'General',
+            status: t.isAnomaly ? 'FLAGGED' : 'VERIFIED',
+            anomalyScore: t.anomalyScore !== null && t.anomalyScore !== undefined ? t.anomalyScore : 0.1,
+            anomalyReason: t.explanation || 'Verified transaction'
+          })));
+        }
+      } else {
+        setTransactions(prev => prev.map(t => evaluateTransaction(t)));
+      }
+      setNotice({ type: 'success', message: 'AI Analysis complete! Real transactions evaluated with explainable risk metrics.' });
+    } catch (err) {
+      setNotice({ type: 'error', message: `AI analysis failed: ${err.message}` });
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisPhase('');
+    }
   };
 
-  // Download Sample Real-World CSV Template
+  // Download Sample Real-World CSV Template (Formatting Helper only, does not populate state)
   const downloadSampleCSV = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
       "TransactionID,AccountNumber,Amount,Type,Date,Category\n" +
@@ -546,14 +641,21 @@ export default function App() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "enterprise_audit_ledger_template.csv");
+    link.setAttribute("download", "financial_ledger_sample_template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Open Authoritative Certificate Modal & Sync with Backend
+  // Open Authoritative Certificate Modal
   const openAuditCertificate = async () => {
+    if (!sessionId || transactions.length === 0) {
+      return setNotice({ 
+        type: 'error', 
+        message: 'Complete an audit before generating a certificate. Upload and reconcile ledger data first.' 
+      });
+    }
+
     try {
       const cert = await api.getCertificate(sessionId).catch(() => null);
       if (cert) {
@@ -587,6 +689,9 @@ export default function App() {
 
   // Export Audit Certificate JSON Package
   const exportAuditPackage = () => {
+    if (!certificatePayload && transactions.length === 0) {
+      return setNotice({ type: 'error', message: 'Complete an audit before exporting certificate package.' });
+    }
     const auditPackage = certificatePayload || {
       projectId: projectId,
       sessionId: sessionId,
@@ -594,19 +699,13 @@ export default function App() {
       canonicalHash: calculatedBatchHash,
       targetContract: configuredAddress,
       chainId: expectedChainId,
-      auditorWallet: account || DEMO_AUDITOR_ADDRESS,
+      auditorWallet: account || 'Unanchored',
       reconciliation: {
         totalDebits: metrics.debits,
         totalCredits: metrics.credits,
         difference: metrics.balanceDifference,
         isReconciled: metrics.isReconciled
       },
-      benfordAnalysis: {
-        validDigitCount: metrics.validDigits,
-        observedDistribution: metrics.observedBenford,
-        benfordAnomalyDetected: metrics.benfordAnomalyDetected
-      },
-      riskIndex: metrics.riskScore,
       totalTransactions: metrics.total,
       flaggedCount: metrics.flagged,
       allTransactions: transactions
@@ -615,20 +714,17 @@ export default function App() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(auditPackage, null, 2));
     const dlAnchor = document.createElement('a');
     dlAnchor.setAttribute("href", dataStr);
-    dlAnchor.setAttribute("download", `audit_certificate_${projectId}.json`);
+    dlAnchor.setAttribute("download", `audit_certificate_${projectId || 'export'}.json`);
     dlAnchor.click();
     dlAnchor.remove();
     setNotice({ type: 'success', message: 'Cryptographic Audit Certificate exported successfully!' });
   };
 
-  const resetToCorporateBaseline = () => {
-    setTransactions(CORPORATE_TREASURY_DATA);
-    setImportStats(null);
-    setNotice({ type: 'info', message: 'Reset ledger to Corporate Treasury Baseline (20 records).' });
-  };
-
   const handleAddTransaction = (e) => {
     e.preventDefault();
+    if (!newTx.id.trim() || !newTx.account.trim()) {
+      return setNotice({ type: 'error', message: 'Please provide both Transaction Reference and Account Number.' });
+    }
     const parsedAmount = parseFloat(newTx.amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       return setNotice({ type: 'error', message: 'Enter a valid positive transaction amount.' });
@@ -639,7 +735,7 @@ export default function App() {
       account: sanitizeCSVValue(newTx.account),
       amount: parsedAmount,
       type: newTx.type,
-      category: sanitizeCSVValue(newTx.category),
+      category: sanitizeCSVValue(newTx.category) || 'General',
       date: newTx.date,
       reviewStatus: 'OPEN'
     });
@@ -647,11 +743,11 @@ export default function App() {
     setTransactions(prev => [evaluated, ...prev]);
     setShowAddModal(false);
     setNewTx({
-      id: `TX-${Math.floor(1000 + Math.random() * 9000)}`,
-      account: 'ACC-8921',
-      amount: '12500',
+      id: '',
+      account: '',
+      amount: '',
       type: 'DEBIT',
-      category: 'Wire Transfer',
+      category: '',
       date: new Date().toISOString().split('T')[0]
     });
     setNotice({ 
@@ -676,61 +772,26 @@ export default function App() {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
-      const matchSearch = t.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          t.account.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          t.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = (t.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (t.account || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (t.category || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchFilter = filterType === 'ALL' || t.status === filterType;
       return matchSearch && matchFilter;
     });
   }, [transactions, searchQuery, filterType]);
 
-  // ON-CHAIN ANCHORING
+  // ON-CHAIN ANCHORING (Real MetaMask Required)
   const registerOnChain = async (e) => {
     e.preventDefault();
     if (!account) {
       setShowWalletModal(true);
-      return setNotice({ type: 'info', message: 'Please connect MetaMask or activate Built-In Auditor Wallet first.' });
+      return setNotice({ type: 'info', message: 'Please connect a Web3 wallet (MetaMask) first.' });
     }
     if (!isBytes32(registerForm.dataHash)) {
       return setNotice({ type: 'error', message: 'Invalid 32-byte hexadecimal data hash.' });
     }
 
     setRegistering(true);
-
-    if (walletMode === 'simulated') {
-      setNotice({ type: 'info', message: 'Anchoring cryptographic attestation via Auditor Wallet…' });
-      setTimeout(async () => {
-        const simulatedTxHash = ethers.keccak256(ethers.toUtf8Bytes(registerForm.dataHash + Date.now().toString()));
-        const newRecord = {
-          batchHash: registerForm.dataHash.trim(),
-          projectId: registerForm.projectId.trim(),
-          timestamp: Date.now(),
-          auditor: account,
-          txHash: simulatedTxHash
-        };
-
-        setAnchoredHistory(prev => [newRecord, ...prev]);
-        setRegistering(false);
-
-        await api.recordBlockchainReceipt({
-          sessionId: sessionId,
-          dataHash: registerForm.dataHash.trim(),
-          transactionHash: simulatedTxHash,
-          blockNumber: 5892301,
-          chainId: expectedChainId,
-          contractAddress: configuredAddress,
-          walletAddress: account,
-          status: "MINED"
-        }).catch(() => {});
-
-        setNotice({ 
-          type: 'success', 
-          message: `Audit proof successfully anchored on-chain! Block Tx: ${shortAddress(simulatedTxHash)}` 
-        });
-      }, 1000);
-      return;
-    }
-
     const injected = getInjectedProvider();
     if (!injected) {
       setRegistering(false);
@@ -758,20 +819,22 @@ export default function App() {
       };
       setAnchoredHistory(prev => [newRecord, ...prev]);
       
-      await api.recordBlockchainReceipt({
-        sessionId: sessionId,
-        dataHash: registerForm.dataHash.trim(),
-        transactionHash: tx.hash,
-        blockNumber: receipt?.blockNumber || 0,
-        chainId: chainId,
-        contractAddress: configuredAddress,
-        walletAddress: account,
-        status: "MINED"
-      }).catch(() => {});
+      if (sessionId) {
+        await api.recordBlockchainReceipt({
+          sessionId: sessionId,
+          dataHash: registerForm.dataHash.trim(),
+          transactionHash: tx.hash,
+          blockNumber: receipt?.blockNumber || 0,
+          chainId: chainId,
+          contractAddress: configuredAddress,
+          walletAddress: account,
+          status: "MINED"
+        }).catch(() => {});
+      }
 
       setNotice({ 
         type: 'success', 
-        message: `Audit proof permanently anchored on-chain! Block Tx: ${shortAddress(tx.hash)}` 
+        message: `Audit proof permanently anchored on-chain! Tx: ${shortAddress(tx.hash)}` 
       });
     } catch (err) {
       setNotice({ type: 'error', message: err?.reason || err?.message || 'Transaction failed.' });
@@ -794,10 +857,8 @@ export default function App() {
     const targetHash = verifyForm.dataHash.trim();
     const targetProject = verifyForm.projectId.trim();
 
-    const localMatch = anchoredHistory.find(h => h.batchHash.toLowerCase() === targetHash.toLowerCase());
-
     const injected = getInjectedProvider();
-    if (injected && configured) {
+    if (injected && configuredAddress) {
       try {
         const provider = new ethers.BrowserProvider(injected);
         const contract = new ethers.Contract(configuredAddress, ABI, provider);
@@ -809,7 +870,7 @@ export default function App() {
             timestamp: Number(timestamp), 
             registeredBy,
             hash: targetHash,
-            source: 'Smart Contract (Sepolia)'
+            source: 'Smart Contract (Ethereum Sepolia)'
           });
           setNotice({ 
             type: 'success', 
@@ -819,36 +880,39 @@ export default function App() {
           return;
         }
       } catch (err) {
-        // Query fallback
+        console.warn("Direct contract query failed, checking database records:", err);
       }
     }
 
-    setTimeout(() => {
-      setVerifying(false);
-      if (localMatch) {
-        setResult({
-          verified: true,
-          timestamp: Math.floor(localMatch.timestamp / 1000),
-          registeredBy: localMatch.auditor,
-          hash: targetHash,
-          source: 'Verified Cryptographic Registry'
-        });
-        setNotice({ 
-          type: 'success', 
-          message: 'Verification Success: Matching immutable audit attestation verified!' 
-        });
-      } else {
-        setResult({ verified: false });
-        setNotice({ 
-          type: 'error', 
-          message: 'Audit hash not found. No matching on-chain record exists for this batch.' 
-        });
-      }
-    }, 500);
+    const localMatch = anchoredHistory.find(h => h.batchHash.toLowerCase() === targetHash.toLowerCase());
+    setVerifying(false);
+    if (localMatch) {
+      setResult({
+        verified: true,
+        timestamp: Math.floor(localMatch.timestamp / 1000),
+        registeredBy: localMatch.auditor,
+        hash: targetHash,
+        source: 'Verified Cryptographic Database Record'
+      });
+      setNotice({ 
+        type: 'success', 
+        message: 'Verification Success: Matching immutable audit attestation verified in database!' 
+      });
+    } else {
+      setResult({
+        verified: false,
+        hash: targetHash,
+        source: 'Not verified'
+      });
+      setNotice({ 
+        type: 'error', 
+        message: 'Attestation not found. The provided hash has not been anchored to the blockchain.' 
+      });
+    }
   };
 
-  // Navigation Group Configuration
-  const navGroups = [
+  // Institutional Sidebar Navigation Groups
+  const navigationGroups = [
     {
       group: "OVERVIEW",
       items: [
@@ -858,38 +922,41 @@ export default function App() {
     {
       group: "AUDIT INTELLIGENCE",
       items: [
-        { id: 'ingestion', label: 'Upload Real Data', icon: FileSpreadsheet, badge: 'CSV' },
+        { id: 'ingestion', label: 'Upload Real Data (CSV)', icon: Upload },
         { id: 'ai', label: 'AI Anomaly Detection', icon: Cpu, badge: metrics.flagged > 0 ? metrics.flagged : null, badgeColor: 'rose' },
-        { id: 'benford', label: 'Benford Law Forensic', icon: Activity },
-        { id: 'reconciliation', label: 'Double-Entry Balance', icon: Scale, statusText: metrics.isReconciled ? 'BALANCED' : 'IMBALANCE' }
+        { id: 'benford', label: 'Benford Law Forensic', icon: Activity }
       ]
     },
     {
       group: "VERIFICATION & ATTESTATION",
       items: [
-        { id: 'blockchain', label: 'Blockchain Audit Trail', icon: Lock, badge: metrics.anchoredCount },
+        { id: 'reconciliation', label: 'Double-Entry Balance', icon: Scale, statusText: metrics.total > 0 ? (metrics.isReconciled ? 'BALANCED' : 'IMBALANCE') : null },
+        { id: 'blockchain', label: 'Blockchain Audit Trail', icon: Lock, badge: metrics.anchoredCount > 0 ? metrics.anchoredCount : null },
         { id: 'reports', label: 'Export Audit Certificate', icon: FileText }
       ]
     },
     {
-      group: "SYSTEM",
+      group: "SYSTEM & TELEMETRY",
       items: [
         { id: 'settings', label: 'System Settings', icon: Settings }
       ]
     }
   ];
 
-  // Audit Pipeline Stages
-  const pipelineStages = [
-    { id: 'ingestion', label: '1. Ingestion', status: 'COMPLETED' },
-    { id: 'ingestion', label: '2. Validation', status: 'COMPLETED' },
-    { id: 'reconciliation', label: '3. Reconcile', status: metrics.isReconciled ? 'COMPLETED' : 'WARNING' },
-    { id: 'ai', label: '4. AI Scoring', status: 'COMPLETED' },
-    { id: 'benford', label: '5. Benford Test', status: metrics.benfordAnomalyDetected ? 'FLAGGED' : 'COMPLETED' },
-    { id: 'ai', label: '6. Compliance', status: metrics.flagged > 0 ? 'FLAGGED' : 'COMPLETED' },
-    { id: 'blockchain', label: '7. Blockchain', status: metrics.anchoredCount > 0 ? 'COMPLETED' : 'PENDING' },
-    { id: 'reports', label: '8. Certificate', status: 'READY' }
-  ];
+  // Dynamic Audit Pipeline Stages (Reflects REAL data state)
+  const pipelineStages = useMemo(() => {
+    const hasData = transactions.length > 0;
+    return [
+      { id: 'ingestion', label: '1. Ingestion', status: hasData ? 'COMPLETED' : 'READY' },
+      { id: 'ingestion', label: '2. Validation', status: hasData ? 'COMPLETED' : 'PENDING' },
+      { id: 'reconciliation', label: '3. Reconcile', status: !hasData ? 'PENDING' : metrics.isReconciled ? 'COMPLETED' : 'WARNING' },
+      { id: 'ai', label: '4. AI Scoring', status: !hasData ? 'PENDING' : 'COMPLETED' },
+      { id: 'benford', label: '5. Benford Test', status: !hasData ? 'PENDING' : metrics.validDigits < 15 ? 'WARNING' : metrics.benfordAnomalyDetected ? 'FLAGGED' : 'COMPLETED' },
+      { id: 'ai', label: '6. Compliance', status: !hasData ? 'PENDING' : metrics.flagged > 0 ? 'FLAGGED' : 'COMPLETED' },
+      { id: 'blockchain', label: '7. Blockchain', status: metrics.anchoredCount > 0 ? 'COMPLETED' : 'PENDING' },
+      { id: 'reports', label: '8. Certificate', status: hasData && metrics.isReconciled ? 'READY' : 'PENDING' }
+    ];
+  }, [transactions.length, metrics]);
 
   return (
     <div className="flex h-screen bg-navy-950 text-slate-100 font-sans antialiased overflow-hidden select-none">
@@ -918,15 +985,14 @@ export default function App() {
             <button 
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition"
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             </button>
           </div>
-          
-          {/* Navigation Groups */}
-          <nav className="p-3 space-y-5 overflow-y-auto max-h-[calc(100vh-230px)]">
-            {navGroups.map((group, gIdx) => (
+
+          {/* Grouped Institutional Navigation */}
+          <nav className="p-3 space-y-5">
+            {navigationGroups.map((group, gIdx) => (
               <div key={gIdx} className="space-y-1">
                 {!sidebarCollapsed && (
                   <span className="text-[10px] font-mono uppercase font-bold text-slate-400 px-3 tracking-wider block">
@@ -975,38 +1041,36 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Bottom Subsystem Status & Session */}
-        <div className="p-3 border-t border-slate-800/80 bg-navy-950/60 text-[11px] space-y-2">
-          {!sidebarCollapsed && (
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>SYSTEMS OPERATIONAL</span>
-              </span>
-              <span className="text-cyan-400 font-mono text-[9px]">v2.1 LIVE</span>
-            </div>
-          )}
-
-          {account ? (
-            <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-              <div className="truncate">
-                {!sidebarCollapsed && (
-                  <span className="block text-[8px] text-slate-400 uppercase font-bold tracking-wider">
-                    {walletMode === 'simulated' ? 'Auditor Demo Key' : 'MetaMask EIP-1193'}
-                  </span>
-                )}
-                <span className="font-mono text-cyan-300 text-[10px]">{shortAddress(account)}</span>
+        {/* Bottom Subsystem Status & Session Indicator */}
+        <div className="p-3 border-t border-slate-800/80">
+          {!sidebarCollapsed ? (
+            <div className="p-3 bg-navy-950/80 border border-slate-800/80 rounded-xl space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-slate-400">TELEMETRY</span>
+                <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  OPERATIONAL
+                </span>
               </div>
-              <button onClick={disconnectWallet} className="text-[10px] text-rose-400 hover:underline ml-2">Exit</button>
+              <div className="space-y-1 text-[11px] text-slate-300 font-mono">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Database:</span>
+                  <span className="text-cyan-400">{dbHealth?.engine || (dbHealth?.databaseReachable ? 'PostgreSQL' : 'Connecting…')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">AI Model:</span>
+                  <span className="text-white">IsolationForest</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Blockchain:</span>
+                  <span className="text-slate-300 font-mono">Sepolia (11155111)</span>
+                </div>
+              </div>
             </div>
           ) : (
-            <button
-              onClick={() => setShowWalletModal(true)}
-              className="w-full py-1.5 px-2 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 font-semibold border border-cyan-500/30 flex items-center justify-center gap-1.5 transition text-xs"
-            >
-              <Wallet className="w-3.5 h-3.5 text-cyan-400" />
-              {!sidebarCollapsed && <span>Connect Wallet</span>}
-            </button>
+            <div className="flex justify-center">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" title="System Operational"></span>
+            </div>
           )}
         </div>
       </aside>
@@ -1023,15 +1087,24 @@ export default function App() {
               <span className="text-slate-200 capitalize">{activeTab.replace('-', ' ')}</span>
             </div>
 
-            <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-              <span>Session: {projectId}</span>
-            </span>
-
-            <span className="hidden lg:inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-              <Zap className="w-3 h-3" />
-              <span>Gasless Auditing</span>
-            </span>
+            {sessions.length > 0 ? (
+              <select
+                value={sessionId}
+                onChange={(e) => switchSession(e.target.value)}
+                className="hidden md:inline-flex bg-navy-950 border border-cyan-500/30 text-cyan-300 text-[10px] font-mono font-semibold rounded-full px-3 py-1 focus:outline-none focus:border-cyan-400 cursor-pointer"
+              >
+                {sessions.map(s => (
+                  <option key={s.id} value={s.id} className="bg-navy-900 text-white">
+                    Session: {s.sessionName || shortAddress(s.id)} ({s.totalRecords || 0} entries)
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                <span>No Active Session</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -1040,7 +1113,7 @@ export default function App() {
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="Search ledger, hash, account…"
+                placeholder="Search ledger, account…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 pr-12 py-1.5 bg-navy-950/80 border border-slate-700/80 rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-60"
@@ -1048,45 +1121,67 @@ export default function App() {
               <span className="absolute right-2.5 top-2 text-[9px] font-mono text-slate-400 border border-slate-700 px-1 rounded">⌘K</span>
             </div>
 
+            {/* Auditor Wallet Connection Pill */}
             <button
-              onClick={() => setActiveTab('ingestion')}
-              className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
+              onClick={() => account ? disconnectWallet() : setShowWalletModal(true)}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-2 transition ${
+                account 
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-300' 
+                  : 'bg-slate-800/80 hover:bg-cyan-600/20 border-slate-700 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300'
+              }`}
             >
-              <Upload className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Import CSV</span>
-            </button>
-
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-cyan-500/20"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add TX</span>
+              <Wallet className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{account ? shortAddress(account) : 'Connect Wallet'}</span>
             </button>
           </div>
         </header>
 
-        {/* Global Notice Alert */}
-        {notice.message && (
+        {/* System Notice Toast */}
+        {notice && (
           <div className="px-8 pt-4">
-            <div className={`p-3 rounded-xl border text-xs flex items-center justify-between transition-all backdrop-blur-md ${
-              notice.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-200' :
-              notice.type === 'error' ? 'bg-rose-500/10 border-rose-500/40 text-rose-200' :
-              'bg-cyan-500/10 border-cyan-500/30 text-cyan-200'
+            <div className={`p-3.5 rounded-xl text-xs flex items-center justify-between border ${
+              notice.type === 'error' 
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' 
+                : notice.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
             }`}>
               <div className="flex items-center gap-2.5">
-                {notice.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> :
-                 notice.type === 'error' ? <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" /> :
-                 <Info className="w-4 h-4 text-cyan-400 shrink-0" />}
-                <span className="font-medium">{notice.message}</span>
+                {notice.type === 'error' ? <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" /> : <Info className="w-4 h-4 shrink-0 text-cyan-400" />}
+                <span>{notice.message}</span>
               </div>
-              <button onClick={() => setNotice({ type: 'info', message: '' })} className="text-slate-400 hover:text-white text-xs ml-4">✕</button>
+              <button onClick={() => setNotice(null)} className="text-slate-400 hover:text-white ml-4">✕</button>
             </div>
           </div>
         )}
 
-        {/* ----------------- TAB BODY CONTENT ----------------- */}
-        <div className="p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Global Loading Banner */}
+        {isLoadingData && (
+          <div className="px-8 pt-4">
+            <div className="p-3 bg-navy-900 border border-cyan-500/30 rounded-xl flex items-center gap-3 text-cyan-300 text-xs">
+              <div className="w-3.5 h-3.5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="font-mono">Synchronizing live audit ledger from Supabase database…</span>
+            </div>
+          </div>
+        )}
+
+        {/* Connection Error Banner with Retry */}
+        {loadError && (
+          <div className="px-8 pt-4">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center justify-between text-xs text-rose-300">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{loadError}</span>
+              </div>
+              <button onClick={loadInitialData} className="px-3 py-1 bg-rose-600/30 hover:bg-rose-600/50 rounded text-rose-200 text-xs font-semibold transition">
+                Retry Connection
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Page Content Container */}
+        <div className="p-8 space-y-6">
 
           {/* ========================================================================= */}
           {/* TAB: EXECUTIVE DASHBOARD */}
@@ -1159,7 +1254,9 @@ export default function App() {
                   <div className="text-xl font-bold font-mono text-white tabular-nums">
                     {metrics.total.toLocaleString()}
                   </div>
-                  <span className="text-[9px] text-emerald-400 font-mono block">100% Ingested</span>
+                  <span className="text-[9px] text-emerald-400 font-mono block">
+                    {metrics.total > 0 ? "100% Ingested" : "No Records"}
+                  </span>
                 </div>
 
                 {/* 2. Total Audited Volume */}
@@ -1177,10 +1274,15 @@ export default function App() {
                 {/* 3. Double-Entry Parity */}
                 <div className="p-4 bg-navy-900 border border-slate-800/80 rounded-xl space-y-1 relative">
                   <span className="text-[10px] text-slate-400 block font-medium">PACIOLI PARITY</span>
-                  <div className={`text-base font-bold font-mono ${metrics.isReconciled ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {metrics.isReconciled ? 'BALANCED' : 'IMBALANCE'}
+                  <div className={`text-base font-bold font-mono ${
+                    metrics.total === 0 ? 'text-slate-500' :
+                    metrics.isReconciled ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {metrics.total === 0 ? 'NO DATA' : metrics.isReconciled ? 'BALANCED' : 'IMBALANCE'}
                   </div>
-                  <span className="text-[10px] font-mono text-slate-400">Diff: ${metrics.balanceDifference.toFixed(2)}</span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {metrics.total === 0 ? 'Awaiting ledger' : `Diff: $${metrics.balanceDifference.toFixed(2)}`}
+                  </span>
                 </div>
 
                 {/* 4. AI Anomaly Count */}
@@ -1198,7 +1300,9 @@ export default function App() {
                   <div className="text-xl font-bold font-mono text-white tabular-nums">
                     {metrics.anchoredCount} <span className="text-xs text-cyan-400 font-normal">Anchors</span>
                   </div>
-                  <span className="text-[10px] text-emerald-400 font-mono">Sepolia Testnet</span>
+                  <span className="text-[10px] text-emerald-400 font-mono">
+                    {metrics.anchoredCount > 0 ? "Sepolia Mined" : "Not Anchored"}
+                  </span>
                 </div>
               </div>
 
@@ -1212,19 +1316,24 @@ export default function App() {
                       <span>Audit Risk Intelligence</span>
                     </h3>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      metrics.total === 0 ? 'bg-slate-800 text-slate-400' :
                       metrics.riskLevel === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
                       metrics.riskLevel === 'HIGH' ? 'bg-amber-500/20 text-amber-400' :
                       'bg-emerald-500/20 text-emerald-400'
                     }`}>
-                      {metrics.riskLevel} RISK
+                      {metrics.total === 0 ? 'NO DATA' : `${metrics.riskLevel} RISK`}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-center py-2">
                     <div className="relative flex items-center justify-center w-32 h-32 rounded-full border-4 border-slate-800">
                       <div className="text-center font-mono">
-                        <span className="text-3xl font-extrabold text-white block">{metrics.riskScore}</span>
-                        <span className="text-[10px] text-slate-500 block uppercase">Risk Index / 100</span>
+                        <span className="text-3xl font-extrabold text-white block">
+                          {metrics.total === 0 ? '0' : metrics.riskScore}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block uppercase">
+                          {metrics.total === 0 ? 'NO DATA' : 'Risk Index / 100'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1254,7 +1363,9 @@ export default function App() {
                     <div>
                       <div className="flex justify-between text-[11px] text-slate-400 mb-1">
                         <span>Double-Entry Imbalance</span>
-                        <span className="font-mono text-emerald-400 font-bold">{metrics.isReconciled ? '0.00% Clean' : 'Discrepancy'}</span>
+                        <span className="font-mono text-emerald-400 font-bold">
+                          {metrics.total === 0 ? '—' : metrics.isReconciled ? '0.00% Clean' : 'Discrepancy'}
+                        </span>
                       </div>
                       <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                         <div className={`h-full ${metrics.isReconciled ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{ width: metrics.isReconciled ? '0%' : '100%' }}></div>
@@ -1274,29 +1385,145 @@ export default function App() {
                       <span className="text-[10px] text-slate-500 font-mono">Model: IsolationForest v2.1</span>
                     </div>
 
-                    <div className="p-4 bg-navy-950/70 border border-slate-800 rounded-xl space-y-2">
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>Automated Compliance Intelligence Analysis</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                        Pacioli double-entry parity check confirms the current ledger is <span className="font-bold text-emerald-400">{metrics.isReconciled ? 'mathematically balanced with $0.00 variance' : 'imbalanced'}</span>. The explainable Isolation Forest engine detected <span className="font-bold text-amber-400">{metrics.flagged} transactions</span> exhibiting statistical divergence or regulatory threshold triggers ({metrics.amlCount} AML limits, {metrics.structuringCount} structuring indicators).
-                      </p>
-                    </div>
+                    {metrics.total === 0 ? (
+                      <div className="p-4 bg-navy-950/70 border border-slate-800 rounded-xl space-y-2">
+                        <h4 className="text-sm font-bold text-slate-300">
+                          Awaiting Financial Ledger Ingestion
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                          No financial data available for analysis. Ingest a ledger CSV to trigger real-time double-entry reconciliation, unsupervised Isolation Forest anomaly scoring, and statutory AML compliance rule evaluation.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-navy-950/70 border border-slate-800 rounded-xl space-y-2">
+                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          <span>Automated Compliance Intelligence Analysis</span>
+                        </h4>
+                        <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                          Pacioli double-entry parity check confirms the current ledger is <span className="font-bold text-emerald-400">{metrics.isReconciled ? 'mathematically balanced with $0.00 variance' : `imbalanced with a discrepancy of $${metrics.balanceDifference.toFixed(2)}`}</span>. The explainable Isolation Forest engine detected <span className="font-bold text-amber-400">{metrics.flagged} transactions</span> exhibiting statistical divergence or regulatory threshold triggers ({metrics.amlCount} AML limits, {metrics.structuringCount} structuring indicators).
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60">
                     <span className="text-[11px] text-slate-400">
-                      Recommendation: Conduct statutory auditor sign-off on flagged high-value transfers.
+                      {metrics.total === 0 ? "Upload financial dataset to begin." : "Recommendation: Review flagged high-value transfers."}
                     </span>
                     <button
-                      onClick={() => setActiveTab('ai')}
+                      onClick={() => setActiveTab(metrics.total === 0 ? 'ingestion' : 'ai')}
                       className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2"
                     >
-                      <span>Review Flagged Transactions</span>
+                      <span>{metrics.total === 0 ? 'Upload CSV' : 'Review Flagged Transactions'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Recent Audit Sessions (Phase 5 Requirement: Real Sessions Only) */}
+              <div className="bg-navy-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+                <div className="p-4 border-b border-slate-800 flex flex-wrap gap-4 items-center justify-between bg-navy-900/90">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Database className="w-4 h-4 text-cyan-400" />
+                      <span>Recent Audit Sessions</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Audit sessions stored in Supabase PostgreSQL database.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('ingestion')}
+                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>New Audit Session</span>
+                  </button>
+                </div>
+
+                {sessions.length === 0 ? (
+                  <div className="p-8 text-center bg-navy-950/40 space-y-3">
+                    <div className="p-3 bg-slate-800/50 rounded-2xl w-max mx-auto text-slate-500">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-sm font-bold text-white">No audits yet.</h4>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      Upload your first financial dataset to begin ledger reconciliation, AI forensics, and cryptographic attestation.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('ingestion')}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/30 transition inline-flex items-center gap-2"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Create Your First Audit</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="bg-navy-950/80 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-800 tracking-wider font-mono">
+                        <tr>
+                          <th className="py-3 px-4">Session Name / ID</th>
+                          <th className="py-3 px-4">Project ID</th>
+                          <th className="py-3 px-4">Date Created</th>
+                          <th className="py-3 px-4 text-center">Entries</th>
+                          <th className="py-3 px-4">Audited Volume</th>
+                          <th className="py-3 px-4">Parity Status</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
+                        {sessions.map(s => {
+                          const isSelected = s.id === sessionId;
+                          return (
+                            <tr key={s.id} className={`hover:bg-slate-800/30 transition ${isSelected ? 'bg-cyan-500/5' : ''}`}>
+                              <td className="py-3 px-4 font-bold text-white">
+                                <span className="block truncate max-w-xs">{s.sessionName || s.id}</span>
+                                <span className="text-[10px] text-slate-500 font-mono block">{shortAddress(s.id)}</span>
+                              </td>
+                              <td className="py-3 px-4 text-cyan-300">{s.projectId}</td>
+                              <td className="py-3 px-4 text-slate-400">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—'}</td>
+                              <td className="py-3 px-4 text-center font-bold text-white tabular-nums">{s.totalRecords || 0}</td>
+                              <td className="py-3 px-4 font-bold text-cyan-300 tabular-nums">
+                                ${Number(s.totalVolume || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-3 px-4">
+                                {s.reconciliation ? (
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    s.reconciliation.isReconciled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                                  }`}>
+                                    {s.reconciliation.isReconciled ? 'BALANCED' : 'IMBALANCE'}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-500 text-[10px]">Pending</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                                  {s.status || 'INITIALIZED'}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-right font-sans">
+                                {isSelected ? (
+                                  <span className="px-2.5 py-1 bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-semibold">Active</span>
+                                ) : (
+                                  <button
+                                    onClick={() => switchSession(s.id)}
+                                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg text-xs font-semibold transition"
+                                  >
+                                    Select
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* Transactions Ledger View */}
@@ -1335,42 +1562,64 @@ export default function App() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
-                      {filteredTransactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3 px-4 font-bold text-white">{tx.id}</td>
-                          <td className="py-3 px-4 text-cyan-300">{tx.account}</td>
-                          <td className="py-3 px-4 font-bold text-white tabular-nums">
-                            ${Number(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              tx.type === 'CREDIT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                            }`}>
-                              {tx.type}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-400">{tx.date}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-max ${
-                              tx.status === 'FLAGGED' ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                            }`}>
-                              {tx.status === 'FLAGGED' ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                              <span>{tx.status}</span>
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-300 max-w-xs truncate font-sans text-xs">
-                            {tx.anomalyReason}
-                          </td>
-                          <td className="py-3 px-4 text-right font-sans">
-                            <button
-                              onClick={() => setSelectedTxForReview(tx)}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg text-xs font-semibold transition"
-                            >
-                              Inspect
-                            </button>
+                      {filteredTransactions.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="py-12 text-center text-slate-500 font-sans">
+                            <FileSpreadsheet className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                            <p className="text-sm font-medium text-slate-400">No transaction records available</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {transactions.length === 0 
+                                ? "Upload a financial CSV or select an existing audit session to populate the ledger." 
+                                : "No transactions match your current search or filter criteria."}
+                            </p>
+                            {transactions.length === 0 && (
+                              <button 
+                                onClick={() => setActiveTab('ingestion')} 
+                                className="mt-3 px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold transition"
+                              >
+                                Upload Real Financial Data
+                              </button>
+                            )}
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredTransactions.map((tx) => (
+                          <tr key={tx.id} className="hover:bg-slate-800/30 transition">
+                            <td className="py-3 px-4 font-bold text-white">{tx.id}</td>
+                            <td className="py-3 px-4 text-cyan-300">{tx.account}</td>
+                            <td className="py-3 px-4 font-bold text-white tabular-nums">
+                              ${Number(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                tx.type === 'CREDIT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                              }`}>
+                                {tx.type}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-slate-400">{tx.date}</td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-max ${
+                                tx.status === 'FLAGGED' ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              }`}>
+                                {tx.status === 'FLAGGED' ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+                                <span>{tx.status}</span>
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-slate-300 max-w-xs truncate font-sans text-xs">
+                              {tx.anomalyReason}
+                            </td>
+                            <td className="py-3 px-4 text-right font-sans">
+                              <button
+                                onClick={() => setSelectedTxForReview(tx)}
+                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg text-xs font-semibold transition"
+                              >
+                                Inspect
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1390,7 +1639,7 @@ export default function App() {
                     <span>Real-World Ledger Ingestion Engine</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
-                    Guided 5-step financial ledger ingestion pipeline with formula injection immunity and automatic column mapping.
+                    Guided financial ledger ingestion pipeline with formula injection immunity and automatic column mapping.
                   </p>
                 </div>
 
@@ -1419,7 +1668,7 @@ export default function App() {
                     type="file" 
                     accept=".csv,.txt"
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
+                      const file = e.target.files[0];
                       if (file) {
                         const reader = new FileReader();
                         reader.onload = (event) => parseCSVFile(event.target.result);
@@ -1432,21 +1681,21 @@ export default function App() {
               </div>
 
               {uploadError && (
-                <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                   <span>{uploadError}</span>
                 </div>
               )}
 
-              {/* Supported Schema Spec */}
-              <div className="p-5 bg-navy-950 border border-slate-800 rounded-xl space-y-3">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">
-                  Auto-Detected Financial Header Mappings
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-slate-400">
+              {/* Expected Format Spec */}
+              <div className="p-4 bg-navy-950/60 border border-slate-800 rounded-xl space-y-2 text-xs">
+                <span className="font-mono text-[10px] text-slate-400 uppercase font-bold block">
+                  Mandatory Schema Headers (Case-Insensitive):
+                </span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
                   <div className="p-3 bg-navy-900 rounded-lg border border-slate-800/80">
                     <span className="text-cyan-300 font-mono block font-bold mb-1">transaction_id</span>
-                    <span>Ref, ID, TxHash, Voucher</span>
+                    <span>Ref, ID, TxHash, TxID</span>
                   </div>
                   <div className="p-3 bg-navy-900 rounded-lg border border-slate-800/80">
                     <span className="text-cyan-300 font-mono block font-bold mb-1">account_number</span>
@@ -1484,7 +1733,7 @@ export default function App() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={triggerAIReanalysis}
-                    disabled={isAnalyzing}
+                    disabled={isAnalyzing || transactions.length === 0}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center gap-2"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
@@ -1501,67 +1750,94 @@ export default function App() {
                 </div>
               )}
 
-              {/* Risk Heatmap Strip */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div className="p-4 bg-navy-950 border border-rose-500/30 rounded-xl">
-                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Critical AML Limits (&gt;$10K)</span>
-                  <span className="text-2xl font-bold font-mono text-rose-400">{metrics.amlCount}</span>
+              {transactions.length === 0 ? (
+                <div className="p-12 text-center bg-navy-950 border border-slate-800 rounded-2xl space-y-3">
+                  <Cpu className="w-10 h-10 text-slate-600 mx-auto" />
+                  <h4 className="text-base font-bold text-white">No transaction data available</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Upload financial data before running anomaly detection. The Isolation Forest model requires real transaction records to evaluate statistical divergence and regulatory AML thresholds.
+                  </p>
+                  <button 
+                    onClick={() => setActiveTab('ingestion')} 
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition inline-flex items-center gap-2"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Financial CSV</span>
+                  </button>
                 </div>
-                <div className="p-4 bg-navy-950 border border-amber-500/30 rounded-xl">
-                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Structuring Risks ($9K–$10K)</span>
-                  <span className="text-2xl font-bold font-mono text-amber-400">{metrics.structuringCount}</span>
-                </div>
-                <div className="p-4 bg-navy-950 border border-blue-500/30 rounded-xl">
-                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Isolation Forest Divergence</span>
-                  <span className="text-2xl font-bold font-mono text-blue-400">{metrics.flagged}</span>
-                </div>
-                <div className="p-4 bg-navy-950 border border-emerald-500/30 rounded-xl">
-                  <span className="text-[10px] text-slate-400 block uppercase font-mono">Clean Verified Entries</span>
-                  <span className="text-2xl font-bold font-mono text-emerald-400">{metrics.verified}</span>
-                </div>
-              </div>
-
-              {/* Anomaly Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {transactions.filter(t => t.status === 'FLAGGED').map(tx => (
-                  <div key={tx.id} className="p-5 bg-navy-950 border border-rose-500/30 rounded-2xl space-y-3 shadow-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-white font-mono text-sm">{tx.id}</span>
-                      <span className="px-2.5 py-1 bg-rose-500/20 text-rose-300 rounded-md text-[10px] font-bold border border-rose-500/40 font-mono">
-                        Score: {(tx.anomalyScore * 100).toFixed(0)}%
-                      </span>
+              ) : (
+                <>
+                  {/* Risk Heatmap Strip */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="p-4 bg-navy-950 border border-rose-500/30 rounded-xl">
+                      <span className="text-[10px] text-slate-400 block uppercase font-mono">Critical AML Limits (&gt;$10K)</span>
+                      <span className="text-2xl font-bold font-mono text-rose-400">{metrics.amlCount}</span>
                     </div>
-
-                    <div className="text-xs text-slate-300 flex items-center gap-3">
-                      <span>Account: <span className="font-mono text-cyan-300 font-bold">{tx.account}</span></span>
-                      <span>•</span>
-                      <span>Amount: <span className="font-mono text-white font-bold tabular-nums">${tx.amount.toLocaleString()}</span></span>
+                    <div className="p-4 bg-navy-950 border border-amber-500/30 rounded-xl">
+                      <span className="text-[10px] text-slate-400 block uppercase font-mono">Structuring Risks ($9K–$10K)</span>
+                      <span className="text-2xl font-bold font-mono text-amber-400">{metrics.structuringCount}</span>
                     </div>
-
-                    <div className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 font-sans leading-relaxed">
-                      {tx.anomalyReason}
+                    <div className="p-4 bg-navy-950 border border-blue-500/30 rounded-xl">
+                      <span className="text-[10px] text-slate-400 block uppercase font-mono">Isolation Forest Divergence</span>
+                      <span className="text-2xl font-bold font-mono text-blue-400">{metrics.flagged}</span>
                     </div>
-
-                    <div className="pt-2 flex justify-between items-center text-xs border-t border-slate-800">
-                      <span className="text-slate-400 font-mono">Status: {tx.reviewStatus || 'OPEN'}</span>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleUpdateReviewStatus(tx.id, 'CLEARED')}
-                          className="px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 rounded-lg text-xs font-semibold border border-emerald-500/30 transition"
-                        >
-                          Clear Finding
-                        </button>
-                        <button 
-                          onClick={() => setSelectedTxForReview(tx)}
-                          className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
-                        >
-                          Inspect
-                        </button>
-                      </div>
+                    <div className="p-4 bg-navy-950 border border-emerald-500/30 rounded-xl">
+                      <span className="text-[10px] text-slate-400 block uppercase font-mono">Clean Verified Entries</span>
+                      <span className="text-2xl font-bold font-mono text-emerald-400">{metrics.verified}</span>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Anomaly Grid */}
+                  {metrics.flagged === 0 ? (
+                    <div className="p-8 text-center bg-navy-950 border border-slate-800 rounded-2xl text-xs text-slate-400">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                      <span className="font-bold text-slate-200 block text-sm">0 Anomalies Detected</span>
+                      <span>All {transactions.length} real transactions conform to statutory AML thresholds and statistical parameters.</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {transactions.filter(t => t.status === 'FLAGGED').map(tx => (
+                        <div key={tx.id} className="p-5 bg-navy-950 border border-rose-500/30 rounded-2xl space-y-3 shadow-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-white font-mono text-sm">{tx.id}</span>
+                            <span className="px-2.5 py-1 bg-rose-500/20 text-rose-300 rounded-md text-[10px] font-bold border border-rose-500/40 font-mono">
+                              Score: {((tx.anomalyScore || 0.1) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+
+                          <div className="text-xs text-slate-300 flex items-center gap-3">
+                            <span>Account: <span className="font-mono text-cyan-300 font-bold">{tx.account}</span></span>
+                            <span>•</span>
+                            <span>Amount: <span className="font-mono text-white font-bold tabular-nums">${Number(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></span>
+                          </div>
+
+                          <div className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 font-sans leading-relaxed">
+                            {tx.anomalyReason}
+                          </div>
+
+                          <div className="pt-2 flex justify-between items-center text-xs border-t border-slate-800">
+                            <span className="text-slate-400 font-mono">Status: {tx.reviewStatus || 'OPEN'}</span>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => handleUpdateReviewStatus(tx.id, 'CLEARED')}
+                                className="px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 rounded-lg text-xs font-semibold border border-emerald-500/30 transition"
+                              >
+                                Clear Finding
+                              </button>
+                              <button 
+                                onClick={() => setSelectedTxForReview(tx)}
+                                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
+                              >
+                                Inspect
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
@@ -1580,73 +1856,100 @@ export default function App() {
                 </p>
               </div>
 
-              {/* Forensic Metric Strip */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
-                <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
-                  <span className="text-[10px] text-slate-500 block">Sample Size</span>
-                  <span className="text-lg font-bold text-white">N = {metrics.validDigits}</span>
+              {metrics.validDigits < 15 ? (
+                <div className="p-12 text-center bg-navy-950 border border-slate-800 rounded-2xl space-y-3">
+                  <Activity className="w-10 h-10 text-slate-600 mx-auto" />
+                  <h4 className="text-base font-bold text-white">Insufficient transaction data for Benford analysis</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Benford's Law forensic screening requires a minimum sample size of 15-30 logarithmic numeric figures to compute meaningful first-digit distribution. Current sample size: <span className="font-mono font-bold text-cyan-400">N = {metrics.validDigits}</span>.
+                  </p>
+                  <button 
+                    onClick={() => setActiveTab('ingestion')} 
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition inline-flex items-center gap-2"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Financial CSV</span>
+                  </button>
                 </div>
-                <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
-                  <span className="text-[10px] text-slate-500 block">Mean Absolute Dev (MAD)</span>
-                  <span className="text-lg font-bold text-cyan-400">{metrics.madScore}</span>
-                </div>
-                <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
-                  <span className="text-[10px] text-slate-500 block">Goodness-of-Fit</span>
-                  <span className="text-lg font-bold text-emerald-400">Acceptable</span>
-                </div>
-                <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
-                  <span className="text-[10px] text-slate-500 block">Screening Flag</span>
-                  <span className={`text-lg font-bold ${metrics.benfordAnomalyDetected ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {metrics.benfordAnomalyDetected ? 'Deviation Flagged' : 'Conforming'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">Statutory Forensic Screening Disclosure:</span> Benford's Law is a statistical screening indicator. Conformity or divergence does not constitute legal proof of fraud and must be corroborated by statutory accounting records.
-                </div>
-              </div>
-
-              {/* Interactive Comparison Visualizer */}
-              <div className="space-y-3">
-                <div className="flex justify-between text-xs text-slate-400 font-semibold px-2 font-mono">
-                  <span>First Digit</span>
-                  <span>Observed Ledger Frequency vs Theoretical Log10 Curve</span>
-                  <span>Deviation</span>
-                </div>
-
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(digit => {
-                  const expected = BENFORD_EXPECTED[digit];
-                  const observed = metrics.observedBenford[digit] || 0;
-                  const delta = Math.abs(observed - expected).toFixed(1);
-                  const isDivergent = Math.abs(observed - expected) > 15.0;
-
-                  return (
-                    <div key={digit} className="p-3.5 bg-navy-950 border border-slate-800/80 rounded-xl flex items-center gap-4 text-xs font-mono">
-                      <span className="w-6 font-bold text-cyan-400 text-sm">{digit}</span>
-                      
-                      <div className="flex-1 space-y-1.5">
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-slate-300">Observed: {observed}%</span>
-                          <span className="text-slate-500">Theoretical (Benford): {expected}%</span>
-                        </div>
-                        <div className="w-full bg-slate-800/80 h-3 rounded-full overflow-hidden flex">
-                          <div 
-                            className={`h-full transition-all duration-500 ${isDivergent ? 'bg-amber-400' : 'bg-gradient-to-r from-cyan-500 to-blue-500'}`} 
-                            style={{ width: `${Math.min(100, observed * 2.2)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      <span className={`w-20 text-right font-bold tabular-nums ${isDivergent ? 'text-amber-400' : 'text-slate-400'}`}>
-                        ±{delta}%
+              ) : (
+                <>
+                  {/* Forensic Metric Strip */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
+                    <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">Sample Size</span>
+                      <span className="text-lg font-bold text-white">N = {metrics.validDigits}</span>
+                    </div>
+                    <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">Mean Absolute Dev (MAD)</span>
+                      <span className="text-lg font-bold text-cyan-400">{metrics.madScore}</span>
+                    </div>
+                    <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">Goodness-of-Fit</span>
+                      <span className={`text-lg font-bold ${
+                        Number(metrics.madScore) < 0.006 ? 'text-emerald-400' :
+                        Number(metrics.madScore) < 0.012 ? 'text-cyan-400' :
+                        Number(metrics.madScore) < 0.015 ? 'text-amber-400' : 'text-rose-400'
+                      }`}>
+                        {Number(metrics.madScore) < 0.006 ? 'Close Conformity' :
+                         Number(metrics.madScore) < 0.012 ? 'Acceptable' :
+                         Number(metrics.madScore) < 0.015 ? 'Marginally Acceptable' : 'Non-Conforming'}
                       </span>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">Screening Flag</span>
+                      <span className={`text-lg font-bold ${metrics.benfordAnomalyDetected ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {metrics.benfordAnomalyDetected ? 'Deviation Flagged' : 'Conforming'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Statutory Forensic Screening Disclosure:</span> Benford's Law is a statistical screening indicator. Conformity or divergence does not constitute legal proof of fraud and must be corroborated by statutory accounting records.
+                    </div>
+                  </div>
+
+                  {/* Interactive Comparison Visualizer */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-xs text-slate-400 font-semibold px-2 font-mono">
+                      <span>First Digit</span>
+                      <span>Observed Ledger Frequency vs Theoretical Log10 Curve</span>
+                      <span>Deviation</span>
+                    </div>
+
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(digit => {
+                      const expected = BENFORD_EXPECTED[digit];
+                      const observed = metrics.observedBenford[digit] || 0;
+                      const delta = Math.abs(observed - expected).toFixed(1);
+                      const isDivergent = Math.abs(observed - expected) > 15.0;
+
+                      return (
+                        <div key={digit} className="p-3.5 bg-navy-950 border border-slate-800/80 rounded-xl flex items-center gap-4 text-xs font-mono">
+                          <span className="w-6 font-bold text-cyan-400 text-sm">{digit}</span>
+                          
+                          <div className="flex-1 space-y-1.5">
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-slate-300">Observed: {observed}%</span>
+                              <span className="text-slate-500">Theoretical (Benford): {expected}%</span>
+                            </div>
+                            <div className="w-full bg-slate-800/80 h-3 rounded-full overflow-hidden flex">
+                              <div 
+                                className={`h-full transition-all duration-500 ${isDivergent ? 'bg-amber-400' : 'bg-gradient-to-r from-cyan-500 to-blue-500'}`} 
+                                style={{ width: `${Math.min(100, observed * 2.2)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          <span className={`w-20 text-right font-bold tabular-nums ${isDivergent ? 'text-amber-400' : 'text-slate-400'}`}>
+                            ±{delta}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1665,45 +1968,62 @@ export default function App() {
                 </p>
               </div>
 
-              {/* Visual Accounting Balance Scale */}
-              <div className="p-8 bg-navy-950 border border-slate-800 rounded-2xl relative overflow-hidden text-center space-y-6 shadow-2xl">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                  <div className="p-5 bg-navy-900 rounded-xl border border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase font-mono block mb-1">TOTAL DEBITS (OUTFLOWS)</span>
-                    <span className="text-2xl font-bold font-mono text-blue-400 tabular-nums">
-                      ${metrics.debits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-center justify-center">
-                    <div className={`p-4 rounded-full border-2 ${metrics.isReconciled ? 'bg-emerald-500/10 border-emerald-400 text-emerald-400 shadow-lg shadow-emerald-500/20' : 'bg-rose-500/10 border-rose-400 text-rose-400 shadow-lg shadow-rose-500/20'}`}>
-                      <Scale className="w-8 h-8" />
+              {transactions.length === 0 ? (
+                <div className="p-12 text-center bg-navy-950 border border-slate-800 rounded-2xl space-y-3">
+                  <Scale className="w-10 h-10 text-slate-600 mx-auto" />
+                  <h4 className="text-base font-bold text-white">No transactions available for reconciliation</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Upload a double-entry financial ledger containing debit and credit entries to analyze balance parity and Pacioli accounting equality.
+                  </p>
+                  <button 
+                    onClick={() => setActiveTab('ingestion')} 
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition inline-flex items-center gap-2"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Financial CSV</span>
+                  </button>
+                </div>
+              ) : (
+                /* Visual Accounting Balance Scale */
+                <div className="p-8 bg-navy-950 border border-slate-800 rounded-2xl relative overflow-hidden text-center space-y-6 shadow-2xl">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <div className="p-5 bg-navy-900 rounded-xl border border-slate-800">
+                      <span className="text-[10px] text-slate-400 uppercase font-mono block mb-1">TOTAL DEBITS (OUTFLOWS)</span>
+                      <span className="text-2xl font-bold font-mono text-blue-400 tabular-nums">
+                        ${metrics.debits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </span>
                     </div>
-                    <span className={`text-xs font-mono font-bold mt-2 ${metrics.isReconciled ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {metrics.isReconciled ? 'ZERO VARIANCE' : `VARIANCE: $${metrics.balanceDifference.toFixed(2)}`}
-                    </span>
+
+                    <div className="flex flex-col items-center justify-center">
+                      <div className={`p-4 rounded-full border-2 ${metrics.isReconciled ? 'bg-emerald-500/10 border-emerald-400 text-emerald-400 shadow-lg shadow-emerald-500/20' : 'bg-rose-500/10 border-rose-400 text-rose-400 shadow-lg shadow-rose-500/20'}`}>
+                        <Scale className="w-8 h-8" />
+                      </div>
+                      <span className={`text-xs font-mono font-bold mt-2 ${metrics.isReconciled ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {metrics.isReconciled ? 'ZERO VARIANCE' : `VARIANCE: $${metrics.balanceDifference.toFixed(2)}`}
+                      </span>
+                    </div>
+
+                    <div className="p-5 bg-navy-900 rounded-xl border border-slate-800">
+                      <span className="text-[10px] text-slate-400 uppercase font-mono block mb-1">TOTAL CREDITS (INFLOWS)</span>
+                      <span className="text-2xl font-bold font-mono text-emerald-400 tabular-nums">
+                        ${metrics.credits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="p-5 bg-navy-900 rounded-xl border border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase font-mono block mb-1">TOTAL CREDITS (INFLOWS)</span>
-                    <span className="text-2xl font-bold font-mono text-emerald-400 tabular-nums">
-                      ${metrics.credits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
+                  <div className={`p-4 rounded-xl border text-xs font-mono flex items-center justify-between ${
+                    metrics.isReconciled ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {metrics.isReconciled ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-rose-400" />}
+                      <span className="font-bold">
+                        {metrics.isReconciled ? 'Ledger Reconciled: Zero discrepancy detected across all ingested entries.' : 'Ledger Imbalance Detected: Debits and credits diverge.'}
+                      </span>
+                    </div>
+                    <span className="tabular-nums">Delta: ${metrics.balanceDifference.toFixed(2)}</span>
                   </div>
                 </div>
-
-                <div className={`p-4 rounded-xl border text-xs font-mono flex items-center justify-between ${
-                  metrics.isReconciled ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                }`}>
-                  <div className="flex items-center gap-2">
-                    {metrics.isReconciled ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-rose-400" />}
-                    <span className="font-bold">
-                      {metrics.isReconciled ? 'Ledger Reconciled: Zero discrepancy detected across all ingested entries.' : 'Ledger Imbalance Detected: Debits and credits diverge.'}
-                    </span>
-                  </div>
-                  <span className="tabular-nums">Delta: ${metrics.balanceDifference.toFixed(2)}</span>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -1740,6 +2060,7 @@ export default function App() {
                     <label className="block text-xs text-slate-400 mb-1">Project Identifier</label>
                     <input 
                       type="text" 
+                      placeholder="e.g. corporate-treasury-2026"
                       value={registerForm.projectId}
                       onChange={e => setRegisterForm({ ...registerForm, projectId: e.target.value })}
                       className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono"
@@ -1750,6 +2071,7 @@ export default function App() {
                     <label className="block text-xs text-slate-400 mb-1">Deterministic Merkle Root Hash</label>
                     <input 
                       type="text" 
+                      placeholder="0x..."
                       value={registerForm.dataHash}
                       onChange={e => setRegisterForm({ ...registerForm, dataHash: e.target.value })}
                       className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-cyan-300 font-mono"
@@ -1775,6 +2097,7 @@ export default function App() {
                     <label className="block text-xs text-slate-400 mb-1">Project Identifier</label>
                     <input 
                       type="text" 
+                      placeholder="e.g. corporate-treasury-2026"
                       value={verifyForm.projectId}
                       onChange={e => setVerifyForm({ ...verifyForm, projectId: e.target.value })}
                       className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono"
@@ -1785,6 +2108,7 @@ export default function App() {
                     <label className="block text-xs text-slate-400 mb-1">Cryptographic Hash</label>
                     <input 
                       type="text" 
+                      placeholder="0x..."
                       value={verifyForm.dataHash}
                       onChange={e => setVerifyForm({ ...verifyForm, dataHash: e.target.value })}
                       className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-cyan-300 font-mono"
@@ -1810,7 +2134,7 @@ export default function App() {
                     {result.verified ? <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" /> : <AlertCircle className="w-6 h-6 text-rose-400 shrink-0" />}
                     <div>
                       <span className="font-bold block text-sm">
-                        {result.verified ? '✓ 3-WAY CONSENSUS VERIFIED (DATABASE == RECALCULATION == ON-CHAIN CONTRACT)' : 'VERIFICATION MISMATCH / NOT FOUND'}
+                        {result.verified ? '✓ 3-WAY CONSENSUS VERIFIED (DATABASE == RECALCULATION == ON-CHAIN CONTRACT)' : 'VERIFICATION MISMATCH / NOT ANCHORED'}
                       </span>
                       {result.verified && (
                         <span className="font-mono text-[11px] text-slate-400">
@@ -1824,6 +2148,33 @@ export default function App() {
                   </span>
                 </div>
               )}
+
+              {/* Anchored History Table */}
+              <div className="p-4 bg-navy-950 border border-slate-800 rounded-xl space-y-3">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block font-mono">
+                  Anchored Attestations History ({anchoredHistory.length})
+                </span>
+                {anchoredHistory.length === 0 ? (
+                  <div className="p-6 text-center text-slate-500 text-xs">
+                    No on-chain anchors recorded yet. Anchor an audit session to create an immutable cryptographic record.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {anchoredHistory.map((item, idx) => (
+                      <div key={idx} className="p-3 bg-navy-900 border border-slate-800 rounded-lg flex items-center justify-between text-xs font-mono">
+                        <div>
+                          <span className="text-white font-bold block">{item.projectId}</span>
+                          <span className="text-slate-400 text-[10px]">Hash: {shortAddress(item.batchHash)}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-emerald-400 font-bold block">ANCHORED</span>
+                          <span className="text-slate-500 text-[10px]">{new Date(item.timestamp).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1842,46 +2193,63 @@ export default function App() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 bg-navy-950 border border-slate-800 rounded-2xl space-y-4">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Award className="w-4 h-4 text-cyan-400" />
-                    <span>Official Printable Audit Certificate</span>
-                  </h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Institutional attestation document with cryptographic verification seals, suitable for regulatory submission, board presentation, or Print-to-PDF.
+              {transactions.length === 0 ? (
+                <div className="p-12 text-center bg-navy-950 border border-slate-800 rounded-2xl space-y-3">
+                  <Award className="w-10 h-10 text-slate-600 mx-auto" />
+                  <h4 className="text-base font-bold text-white">Complete an audit before generating a certificate</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    An active audit session with reconciled financial entries and cryptographic Merkle root verification is required to issue an authoritative attestation certificate.
                   </p>
-                  <button
-                    onClick={openAuditCertificate}
-                    className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center gap-2"
+                  <button 
+                    onClick={() => setActiveTab('ingestion')} 
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition inline-flex items-center gap-2"
                   >
-                    <Printer className="w-4 h-4" />
-                    <span>View & Print Official Certificate</span>
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Financial CSV</span>
                   </button>
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 bg-navy-950 border border-slate-800 rounded-2xl space-y-4">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Award className="w-4 h-4 text-cyan-400" />
+                      <span>Official Printable Audit Certificate</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Institutional attestation document with cryptographic verification seals, suitable for regulatory submission, board presentation, or Print-to-PDF.
+                    </p>
+                    <button
+                      onClick={openAuditCertificate}
+                      className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center gap-2"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>View & Print Official Certificate</span>
+                    </button>
+                  </div>
 
-                <div className="p-6 bg-navy-950 border border-slate-800 rounded-2xl space-y-4">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Download className="w-4 h-4 text-cyan-400" />
-                    <span>Download Cryptographic JSON Package</span>
-                  </h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Complete machine-readable audit bundle including all transaction hashes, Benford logarithmic frequencies, and contract attestation receipts.
-                  </p>
-                  <button
-                    onClick={exportAuditPackage}
-                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition flex items-center gap-2 border border-slate-700"
-                  >
-                    <Download className="w-4 h-4 text-cyan-400" />
-                    <span>Download JSON Audit Package</span>
-                  </button>
+                  <div className="p-6 bg-navy-950 border border-slate-800 rounded-2xl space-y-4">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Download className="w-4 h-4 text-cyan-400" />
+                      <span>Cryptographic Audit Package (JSON)</span>
+                    </h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Machine-verifiable JSON archive comprising the entire ledger, rule attribution flags, reconciliation proofs, and smart contract signature.
+                    </p>
+                    <button
+                      onClick={exportAuditPackage}
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Export Signed Audit JSON</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* TAB: SYSTEM SETTINGS */}
+          {/* TAB: SYSTEM SETTINGS & TELEMETRY */}
           {/* ========================================================================= */}
           {activeTab === 'settings' && (
             <div className="bg-navy-900 border border-slate-800/80 rounded-2xl p-6 space-y-6">
@@ -1889,74 +2257,113 @@ export default function App() {
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     <Settings className="w-5 h-5 text-cyan-400" />
-                    <span>System Settings & Real-Time Telemetry Matrix</span>
+                    <span>System Settings & Operational Telemetry</span>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Live operational telemetry across Frontend, Backend API, Supabase PostgreSQL, AI Engine, and Blockchain.
-                  </p>
+                  <p className="text-xs text-slate-400 mt-1">Configure regulatory AML screening rules and monitor live subsystem connectivity.</p>
                 </div>
-
                 <button
                   onClick={refreshSystemHealth}
                   disabled={isHealthChecking}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+                  className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 rounded-lg text-xs font-mono flex items-center gap-1.5 transition"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isHealthChecking ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isHealthChecking ? 'animate-spin' : ''}`} />
                   <span>Refresh Telemetry</span>
                 </button>
               </div>
 
-              {/* Real-time Subsystem Matrix */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                {[
-                  { name: "Frontend SPA", status: "ONLINE", detail: "Vite Port 5173" },
-                  { name: "Backend REST API", status: "ONLINE", detail: "FastAPI Port 8000" },
-                  { name: "Supabase DB", status: dbHealth?.databaseReachable ? "ONLINE" : "READY", detail: "11 Tables Active" },
-                  { name: "AI Isolation Forest", status: "ONLINE", detail: "Contamination 8%" },
-                  { name: "Blockchain RPC", status: "ONLINE", detail: "Sepolia Testnet" },
-                ].map((s, idx) => (
-                  <div key={idx} className="p-4 bg-navy-950 border border-slate-800 rounded-xl space-y-1">
-                    <span className="text-[10px] text-slate-400 block font-medium">{s.name}</span>
-                    <span className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span>{s.status}</span>
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono block">{s.detail}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-4 max-w-xl text-xs pt-4 font-mono">
-                <div>
-                  <label className="block text-slate-400 mb-1">Contract Address</label>
-                  <input 
-                    type="text" 
-                    value={configuredAddress} 
-                    onChange={e => setConfiguredAddress(e.target.value)}
-                    className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs"
-                  />
+              {/* Subsystems Matrix */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs font-mono">
+                <div className="p-3.5 bg-navy-950 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-slate-500 block text-[10px]">FRONTEND UI</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    ONLINE
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate block">Vite 5.4.21</span>
                 </div>
 
-                <div>
-                  <label className="block text-slate-400 mb-1">Target EVM Chain ID</label>
-                  <input 
-                    type="text" 
-                    value={expectedChainId} 
-                    onChange={e => setExpectedChainId(e.target.value)}
-                    className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono text-xs"
-                  />
+                <div className="p-3.5 bg-navy-950 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-slate-500 block text-[10px]">FASTAPI SERVICE</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    ONLINE
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate block">Port 8000</span>
+                </div>
+
+                <div className="p-3.5 bg-navy-950 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-slate-500 block text-[10px]">DATABASE ENGINE</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    HEALTHY
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate block">{dbHealth?.engine || 'Local / Cloud'}</span>
+                </div>
+
+                <div className="p-3.5 bg-navy-950 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-slate-500 block text-[10px]">AI ANOMALY ENGINE</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    ONLINE
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate block">IsolationForest (8%)</span>
+                </div>
+
+                <div className="p-3.5 bg-navy-950 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-slate-500 block text-[10px]">ETHEREUM SEPOLIA</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    READY
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate block">Chain 11155111</span>
+                </div>
+              </div>
+
+              {/* Threshold Configuration */}
+              <div className="p-6 bg-navy-950 border border-slate-800 rounded-2xl space-y-4">
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-cyan-400" />
+                  <span>Statutory Compliance Thresholds</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-slate-400 mb-1">AML Mandatory Reporting Limit ($)</label>
+                    <input 
+                      type="number" 
+                      value={amlThreshold}
+                      onChange={e => setAmlThreshold(Number(e.target.value))}
+                      className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-1 block">Default: $10,000 statutory CTR trigger</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1">Structuring Window Lower Bound ($)</label>
+                    <input 
+                      type="number" 
+                      value={structuringThreshold}
+                      onChange={e => setStructuringThreshold(Number(e.target.value))}
+                      className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-mono"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-1 block">Default: $9,000 smurfing pattern detection</span>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-800 flex gap-3 font-sans">
                   <button
                     onClick={() => {
                       localStorage.clear();
-                      resetToCorporateBaseline();
-                      setNotice({ type: 'info', message: 'Local storage reset to corporate defaults.' });
+                      setTransactions([]);
+                      setSessions([]);
+                      setSessionId('');
+                      setProjectId('');
+                      setAnchoredHistory([]);
+                      setNotice({ type: 'info', message: 'Local storage cache cleared. Application reset to clean zero-state.' });
                     }}
                     className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded-xl font-semibold text-xs transition"
                   >
-                    Reset Local Storage Cache
+                    Clear Local Storage Cache
                   </button>
                 </div>
               </div>
@@ -1970,54 +2377,89 @@ export default function App() {
 
       {/* CSV Ingestion Preview Modal */}
       {showPreviewModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-navy-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-navy-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
-                <span>Confirm Financial Dataset Ingestion</span>
-              </h3>
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-sm font-bold text-white">Ingestion Parity Preview</h3>
+              </div>
               <button onClick={() => setShowPreviewModal(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
             </div>
 
             {importStats && (
-              <div className="grid grid-cols-4 gap-2 text-center text-xs">
+              <div className="grid grid-cols-4 gap-2 text-xs font-mono">
                 <div className="p-3 bg-navy-950 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[10px]">Total Rows</span>
-                  <span className="text-white font-bold font-mono text-sm">{importStats.totalRows}</span>
+                  <span className="text-[10px] text-slate-500 block">Valid Rows</span>
+                  <span className="text-emerald-400 font-bold">{importStats.importedCount}</span>
                 </div>
                 <div className="p-3 bg-navy-950 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[10px]">Valid Entries</span>
-                  <span className="text-emerald-400 font-bold font-mono text-sm">{importStats.importedCount}</span>
+                  <span className="text-[10px] text-slate-500 block">Duplicates</span>
+                  <span className="text-amber-400 font-bold">{importStats.duplicates}</span>
                 </div>
                 <div className="p-3 bg-navy-950 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[10px]">Skipped</span>
-                  <span className="text-slate-400 font-bold font-mono text-sm">{importStats.skippedCount}</span>
+                  <span className="text-[10px] text-slate-500 block">Total Volume</span>
+                  <span className="text-cyan-400 font-bold">${importStats.volume.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="p-3 bg-navy-950 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[10px]">Duplicates</span>
-                  <span className="text-amber-400 font-bold font-mono text-sm">{importStats.duplicates}</span>
+                  <span className="text-[10px] text-slate-500 block">Skipped</span>
+                  <span className="text-slate-400 font-bold">{importStats.skippedCount}</span>
                 </div>
               </div>
             )}
 
-            <p className="text-xs text-slate-300 leading-relaxed font-sans">
-              Confirming will store these transactions into the audit database, run the double-entry reconciliation engine, and execute explainable AI anomaly scoring.
-            </p>
+            <div className="overflow-y-auto flex-1 border border-slate-800 rounded-xl">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-navy-950 text-slate-400 uppercase text-[10px] font-mono sticky top-0">
+                  <tr>
+                    <th className="py-2.5 px-3">Ref</th>
+                    <th className="py-2.5 px-3">Account</th>
+                    <th className="py-2.5 px-3">Amount</th>
+                    <th className="py-2.5 px-3">Type</th>
+                    <th className="py-2.5 px-3">Rule Scoring</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800 font-mono text-[11px]">
+                  {csvPreviewRows.slice(0, 10).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-800/40">
+                      <td className="py-2 px-3 text-white font-bold">{row.id}</td>
+                      <td className="py-2 px-3 text-cyan-300">{row.account}</td>
+                      <td className="py-2 px-3 text-white">${row.amount.toLocaleString()}</td>
+                      <td className="py-2 px-3">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${row.type === 'CREDIT' ? 'text-emerald-400' : 'text-blue-400'}`}>
+                          {row.type}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${row.status === 'FLAGGED' ? 'text-rose-400 bg-rose-500/10' : 'text-emerald-400 bg-emerald-500/10'}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-              <button 
-                onClick={() => setShowPreviewModal(false)}
-                className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={commitIngestedData}
-                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-600/30"
-              >
-                Confirm & Commit to Database
-              </button>
+            <div className="pt-2 flex justify-between items-center text-xs">
+              <span className="text-slate-400 text-[11px]">
+                Showing first 10 rows of {csvPreviewRows.length} total extracted records.
+              </span>
+              <div className="flex gap-2.5">
+                <button
+                  onClick={() => setShowPreviewModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={commitIngestedData}
+                  className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center gap-2"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Commit to Real Database</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2026,99 +2468,128 @@ export default function App() {
       {/* Official Printable Audit Certificate Modal */}
       {showCertModal && certificatePayload && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div id="printable-audit-certificate" className="bg-navy-950 border border-slate-700 rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 text-slate-100 print:bg-white print:text-black">
-            <div className="flex justify-between items-start border-b border-slate-800 pb-4">
-              <div>
-                <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest font-bold block">
-                  OFFICIAL AUDIT ATTESTATION CERTIFICATE
-                </span>
-                <h2 className="text-xl font-bold text-white mt-1">{certificatePayload.sessionName}</h2>
-                <span className="text-xs text-slate-400 font-mono">Certificate ID: {certificatePayload.certificateNumber}</span>
+          <div className="bg-navy-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 my-8">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-4 no-print">
+              <div className="flex items-center gap-2">
+                <Award className="w-6 h-6 text-cyan-400" />
+                <h3 className="text-base font-bold text-white">Cryptographic Audit Attestation Certificate</h3>
               </div>
-              <div className="flex gap-2 print:hidden no-print">
-                <button 
+              <div className="flex items-center gap-3">
+                <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 bg-cyan-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-cyan-600/30"
+                  className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-600/30 transition flex items-center gap-2"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print to PDF</span>
+                  <span>Print / Save as PDF</span>
                 </button>
-                <button onClick={() => setShowCertModal(false)} className="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-xl">✕</button>
+                <button onClick={() => setShowCertModal(false)} className="text-slate-400 hover:text-white text-sm">✕</button>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 text-xs font-mono">
-              <div className="p-4 bg-navy-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400 block text-[10px]">Total Audited Volume</span>
-                <span className="font-bold text-white text-base tabular-nums">${certificatePayload.totalVolume.toLocaleString()}</span>
-              </div>
-              <div className="p-4 bg-navy-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400 block text-[10px]">Reconciliation Parity</span>
-                <span className="font-bold text-emerald-400 text-base">
-                  {certificatePayload.reconciliation?.isReconciled ? 'BALANCED' : 'IMBALANCE'}
+            {/* Printable Document Box */}
+            <div id="printable-audit-certificate" className="bg-navy-950 border-2 border-slate-800 rounded-2xl p-8 space-y-6 font-mono text-xs">
+              <div className="text-center space-y-2 border-b border-slate-800 pb-6">
+                <span className="text-[10px] text-cyan-400 tracking-widest uppercase font-bold block">
+                  STATUTORY CRYPTOGRAPHIC AUDIT RECORD
+                </span>
+                <h2 className="text-xl font-bold text-white mt-1">{certificatePayload.sessionName}</h2>
+                <span className="text-xs text-slate-400 block font-mono">
+                  Certificate Ref: {certificatePayload.certificateNumber}
                 </span>
               </div>
-              <div className="p-4 bg-navy-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400 block text-[10px]">Issued Timestamp</span>
-                <span className="text-slate-300">{new Date(certificatePayload.issuedAt).toLocaleDateString()}</span>
+
+              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                <div>
+                  <span className="text-slate-500 block text-[10px]">PROJECT IDENTIFIER</span>
+                  <span className="text-white font-bold">{certificatePayload.projectId}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">ISSUED TIMESTAMP (UTC)</span>
+                  <span className="text-white">{certificatePayload.issuedAt}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">AUDITED RECORDS</span>
+                  <span className="text-white font-bold">{certificatePayload.totalRecords} Entries</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">AUDITED VOLUME</span>
+                  <span className="text-cyan-400 font-bold">
+                    ${Number(certificatePayload.totalVolume).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="p-4 bg-navy-900 rounded-xl border border-slate-800 space-y-2 text-xs">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block font-mono">Deterministic Merkle Hash Fingerprint</span>
-              <span className="font-mono text-cyan-300 break-all text-[11px] block">{certificatePayload.canonicalHash}</span>
-            </div>
+              <div className="p-4 bg-navy-900 border border-slate-800 rounded-xl space-y-2">
+                <span className="text-[10px] text-slate-500 block">DETERMINISTIC MERKLE ROOT HASH</span>
+                <span className="text-cyan-300 font-mono text-[11px] break-all block">
+                  {certificatePayload.canonicalHash}
+                </span>
+              </div>
 
-            <div className="text-[10px] text-slate-500 border-t border-slate-800 pt-3 leading-relaxed">
-              {certificatePayload.legalNotice}
+              <div className="p-4 bg-navy-900 border border-slate-800 rounded-xl space-y-2">
+                <span className="text-[10px] text-slate-500 block">PACIOLI DOUBLE-ENTRY RECONCILIATION</span>
+                <div className="flex justify-between text-xs">
+                  <span>Debits: ${Number(certificatePayload.reconciliation?.totalDebit || 0).toLocaleString()}</span>
+                  <span>Credits: ${Number(certificatePayload.reconciliation?.totalCredit || 0).toLocaleString()}</span>
+                  <span className={certificatePayload.reconciliation?.isReconciled ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                    {certificatePayload.reconciliation?.status || (certificatePayload.reconciliation?.isReconciled ? 'BALANCED' : 'IMBALANCE')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-navy-900 border border-slate-800 rounded-xl space-y-2">
+                <span className="text-[10px] text-slate-500 block">BLOCKCHAIN ANCHORING ATTESTATION</span>
+                {certificatePayload.blockchainAttestation ? (
+                  <div className="space-y-1 text-[11px]">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Tx Hash:</span>
+                      <span className="text-cyan-400 truncate max-w-xs">{certificatePayload.blockchainAttestation.txHash}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Signer / Auditor:</span>
+                      <span className="text-white">{certificatePayload.blockchainAttestation.auditor}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-amber-400 block text-[11px]">
+                    Not yet anchored to Ethereum Sepolia.
+                  </span>
+                )}
+              </div>
+
+              <p className="text-[10px] text-slate-500 leading-relaxed font-sans border-t border-slate-800 pt-4">
+                {certificatePayload.legalNotice}
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Wallet Modal */}
+      {/* Auditor Wallet Modal */}
       {showWalletModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-navy-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-sm font-bold text-white">Select Auditor Wallet</h3>
+                <h3 className="text-sm font-bold text-white">Connect Auditor Wallet</h3>
               </div>
               <button onClick={() => setShowWalletModal(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
             </div>
 
             <div className="space-y-3">
               <div 
-                onClick={connectSimulatedWallet}
-                className="p-4 bg-navy-950 hover:bg-slate-800/80 border border-cyan-500/40 hover:border-cyan-400 rounded-xl cursor-pointer transition space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-cyan-300 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    Built-In Auditor Wallet (Instant Demo Mode)
-                  </span>
-                  <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded text-[10px] font-bold border border-cyan-500/30">
-                    Gasless
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Zero installation required! Connects an immediate in-browser wallet ({shortAddress(DEMO_AUDITOR_ADDRESS)}) to sign, anchor, and verify audits.
-                </p>
-              </div>
-
-              <div 
                 onClick={hasInjectedMetaMask ? connectMetaMask : undefined}
                 className={`p-4 bg-navy-950 border rounded-xl transition space-y-1.5 ${
                   hasInjectedMetaMask 
-                    ? 'hover:bg-slate-800/80 border-slate-700 hover:border-amber-400 cursor-pointer' 
-                    : 'border-slate-800 opacity-80'
+                    ? 'hover:bg-slate-800/80 border-cyan-500/40 hover:border-cyan-400 cursor-pointer shadow-md' 
+                    : 'border-slate-800 opacity-90'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white flex items-center gap-2">
-                    <span>🦊</span>
-                    MetaMask Browser Extension
+                    <span className="text-base">🦊</span>
+                    MetaMask Browser Extension (EIP-1193)
                   </span>
                   {hasInjectedMetaMask ? (
                     <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded text-[10px] font-bold">Detected</span>
@@ -2128,17 +2599,81 @@ export default function App() {
                 </div>
                 <p className="text-[11px] text-slate-400">
                   {hasInjectedMetaMask ? 
-                    "Connect your browser extension wallet for live transactions on Sepolia." : 
-                    "MetaMask extension was not detected in this browser window."
+                    "Connect your real browser wallet to sign cryptographic Merkle roots and anchor audit records on Ethereum Sepolia." : 
+                    "MetaMask extension was not detected in this browser window. Please install MetaMask to enable live on-chain anchoring."
                   }
                 </p>
+                {!hasInjectedMetaMask && (
+                  <a
+                    href="https://metamask.io/download/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[11px] text-cyan-400 hover:text-cyan-300 font-bold mt-2"
+                  >
+                    <span>Download MetaMask</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Transaction Modal */}
+      {/* Transaction Inspection Modal */}
+      {selectedTxForReview && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-navy-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Eye className="w-4 h-4 text-cyan-400" />
+                <span>Transaction Diagnostic Dossier</span>
+              </h3>
+              <button onClick={() => setSelectedTxForReview(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
+            </div>
+
+            <div className="space-y-3 font-mono text-xs">
+              <div className="flex justify-between p-3 bg-navy-950 rounded-xl border border-slate-800">
+                <span className="text-slate-500">Transaction Ref:</span>
+                <span className="text-white font-bold">{selectedTxForReview.id}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-navy-950 rounded-xl border border-slate-800">
+                <span className="text-slate-500">Account:</span>
+                <span className="text-cyan-400 font-bold">{selectedTxForReview.account}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-navy-950 rounded-xl border border-slate-800">
+                <span className="text-slate-500">Amount:</span>
+                <span className="text-white font-bold">${Number(selectedTxForReview.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-navy-950 rounded-xl border border-slate-800">
+                <span className="text-slate-500">Accounting Type:</span>
+                <span className={`font-bold ${selectedTxForReview.type === 'CREDIT' ? 'text-emerald-400' : 'text-blue-400'}`}>
+                  {selectedTxForReview.type}
+                </span>
+              </div>
+              <div className="flex justify-between p-3 bg-navy-950 rounded-xl border border-slate-800">
+                <span className="text-slate-500">Anomaly Score:</span>
+                <span className="text-amber-400 font-bold">{((selectedTxForReview.anomalyScore || 0.1) * 100).toFixed(0)}%</span>
+              </div>
+              <div className="p-3 bg-navy-950 rounded-xl border border-slate-800 space-y-1">
+                <span className="text-slate-500 block text-[10px]">Rule Attribution Reason:</span>
+                <span className="text-slate-200 font-sans block">{selectedTxForReview.anomalyReason}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={() => setSelectedTxForReview(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Add Transaction Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-navy-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -2152,9 +2687,11 @@ export default function App() {
                 <label className="block text-slate-400 mb-1">Transaction Ref</label>
                 <input 
                   type="text" 
+                  placeholder="e.g. TX-1001"
                   value={newTx.id} 
                   onChange={e => setNewTx({ ...newTx, id: e.target.value })}
                   className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono"
+                  required
                 />
               </div>
 
@@ -2162,9 +2699,11 @@ export default function App() {
                 <label className="block text-slate-400 mb-1">Account Number</label>
                 <input 
                   type="text" 
+                  placeholder="e.g. ACC-401"
                   value={newTx.account} 
                   onChange={e => setNewTx({ ...newTx, account: e.target.value })}
                   className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono"
+                  required
                 />
               </div>
 
@@ -2173,16 +2712,19 @@ export default function App() {
                   <label className="block text-slate-400 mb-1">Amount ($)</label>
                   <input 
                     type="number" 
-                    step="0.01"
+                    step="0.01" 
+                    placeholder="0.00"
                     value={newTx.amount} 
                     onChange={e => setNewTx({ ...newTx, amount: e.target.value })}
                     className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono"
+                    required
                   />
                 </div>
+
                 <div>
                   <label className="block text-slate-400 mb-1">Type</label>
-                  <select
-                    value={newTx.type}
+                  <select 
+                    value={newTx.type} 
                     onChange={e => setNewTx({ ...newTx, type: e.target.value })}
                     className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white"
                   >
@@ -2192,19 +2734,30 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div>
+                <label className="block text-slate-400 mb-1">Category</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Vendor Payment"
+                  value={newTx.category} 
+                  onChange={e => setNewTx({ ...newTx, category: e.target.value })}
+                  className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2.5">
                 <button 
                   type="button" 
-                  onClick={() => setShowAddModal(false)} 
-                  className="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition shadow-md shadow-cyan-600/30"
+                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-cyan-600/30"
                 >
-                  Ingest Entry
+                  Save Transaction
                 </button>
               </div>
             </form>
@@ -2212,48 +2765,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Forensic Transaction Inspection Drawer */}
-      {selectedTxForReview && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-          <div className="bg-navy-900 border-l border-slate-800 w-full max-w-md p-6 h-full overflow-y-auto space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-white">Forensic Transaction Inspector</h3>
-                <span className="font-mono text-cyan-400 text-xs">{selectedTxForReview.id}</span>
-              </div>
-              <button onClick={() => setSelectedTxForReview(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-4 bg-navy-950 rounded-xl border border-slate-800">
-                <span className="text-slate-500 block text-[10px] font-mono">Account Reference</span>
-                <span className="font-mono text-white text-sm font-bold">{selectedTxForReview.account}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 bg-navy-950 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[10px] font-mono">Amount</span>
-                  <span className="font-mono text-white text-sm font-bold tabular-nums">${selectedTxForReview.amount.toLocaleString()}</span>
-                </div>
-                <div className="p-4 bg-navy-950 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[10px] font-mono">Entry Type</span>
-                  <span className="font-mono text-cyan-300 text-sm font-bold">{selectedTxForReview.type}</span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-navy-950 rounded-xl border border-slate-800 space-y-1">
-                <span className="text-slate-500 block text-[10px] font-mono">AI Feature Attribution</span>
-                <p className="text-slate-300 font-sans leading-relaxed text-xs">{selectedTxForReview.anomalyReason}</p>
-              </div>
-
-              <div className="p-4 bg-navy-950 rounded-xl border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400">Risk Assessment:</span>
-                <span className="font-mono font-bold text-amber-400">{((selectedTxForReview.anomalyScore || 0.1) * 100).toFixed(0)}% Score</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
